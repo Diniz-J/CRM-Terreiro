@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"log"
+	"os"
+)
 
 type Config struct {
 	Database DatabaseConfig
@@ -41,5 +44,6 @@ func getEnv(key, fallback string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
+	log.Printf("ENV %s not set, using default", key)
 	return fallback
 }
