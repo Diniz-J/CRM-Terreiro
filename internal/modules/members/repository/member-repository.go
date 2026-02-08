@@ -21,6 +21,12 @@ type scannable interface {
 	Scan(dest ...any) error
 }
 
+const memberSelectColumns = `
+	id, nome, nome_religioso, cpf, rg, data_nascimento, sexo, telefone, email,
+		endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado,
+		endereco_cep, cargo, status, odun, observacoes, created_at, updated_at, deleted_at
+`
+
 // Scan
 func scanMember(s scannable) (*model.Member, error) {
 	var member model.Member
@@ -98,7 +104,7 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 		member.UpdatedAt)
 
 	if err != nil {
-		return fmt.Errorf("Failed to save member: %w", err)
+		return fmt.Errorf("insert member: %w", err)
 	}
 
 	return nil
@@ -106,9 +112,7 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 
 func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Member, error) {
 	query := `
-		SELECT id, nome, nome_religioso, cpf, rg, data_nascimento, sexo, telefone, email,
-		endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado,
-		endereco_cep, cargo, status, odun, observacoes, created_at, updated_at, deleted_at   FROM members 
+		SELECT ` + memberSelectColumns + ` FROM members 
 		WHERE id = ? AND deleted_at IS NULL`
 
 	row := r.db.QueryRowContext(ctx, query, id)
@@ -116,25 +120,23 @@ func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Memb
 	member, err := scanMember(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New(fmt.Sprintf("Member with id %s not found", id))
+			return nil, fmt.Errorf("failed to found id(%s): %w", id, err)
 		}
-		return nil, fmt.Errorf("Failed to find member by id(%s): %w", id, err)
+		return nil, fmt.Errorf("failed to scan id(%s): %w", id, err)
 	}
 	return member, nil
 }
 
 func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*model.Member, error) {
 	query := `
-		SELECT id, nome, nome_religioso, cpf, rg, data_nascimento, sexo, telefone, email,
-		endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado,
-		endereco_cep, cargo, status, odun, observacoes, created_at, updated_at, deleted_at   FROM members 
+		SELECT ` + memberSelectColumns + ` FROM members 
 		WHERE nome LIKE ? AND deleted_at IS NULL`
 
 	search := "%" + nome + "%"
 
 	rows, err := r.db.QueryContext(ctx, query, search)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to search members: %w", err)
+		return nil, fmt.Errorf("failed to search: %w", err)
 	}
 	defer rows.Close()
 
@@ -143,9 +145,13 @@ func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*mo
 	for rows.Next() {
 		member, err := scanMember(rows)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to search members: %w", err)
+			return nil, fmt.Errorf("failed to scan: %w", err)
 		}
 		members = append(members, member)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+
 	}
 	return members, nil
 }
