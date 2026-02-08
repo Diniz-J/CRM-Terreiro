@@ -110,52 +110,6 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 	return nil
 }
 
-func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Member, error) {
-	query := `
-		SELECT ` + memberSelectColumns + ` FROM members 
-		WHERE id = ? AND deleted_at IS NULL`
-
-	row := r.db.QueryRowContext(ctx, query, id)
-
-	member, err := scanMember(row)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to found id(%s): %w", id, err)
-		}
-		return nil, fmt.Errorf("failed to scan id(%s): %w", id, err)
-	}
-	return member, nil
-}
-
-func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*model.Member, error) {
-	query := `
-		SELECT ` + memberSelectColumns + ` FROM members 
-		WHERE nome LIKE ? AND deleted_at IS NULL`
-
-	search := "%" + nome + "%"
-
-	rows, err := r.db.QueryContext(ctx, query, search)
-	if err != nil {
-		return nil, fmt.Errorf("failed to search: %w", err)
-	}
-	defer rows.Close()
-
-	var members []*model.Member
-
-	for rows.Next() {
-		member, err := scanMember(rows)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan: %w", err)
-		}
-		members = append(members, member)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %w", err)
-
-	}
-	return members, nil
-}
-
 func (r *MemberRepository) Update(ctx context.Context, member *model.Member) error {
 	query := `
 		UPDATE members
@@ -215,4 +169,50 @@ func (r *MemberRepository) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("delete member: %w", err)
 	}
 	return nil
+}
+
+func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Member, error) {
+	query := `
+		SELECT ` + memberSelectColumns + ` FROM members 
+		WHERE id = ? AND deleted_at IS NULL`
+
+	row := r.db.QueryRowContext(ctx, query, id)
+
+	member, err := scanMember(row)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("failed to found id(%s): %w", id, err)
+		}
+		return nil, fmt.Errorf("failed to scan id(%s): %w", id, err)
+	}
+	return member, nil
+}
+
+func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*model.Member, error) {
+	query := `
+		SELECT ` + memberSelectColumns + ` FROM members 
+		WHERE nome LIKE ? AND deleted_at IS NULL`
+
+	search := "%" + nome + "%"
+
+	rows, err := r.db.QueryContext(ctx, query, search)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search: %w", err)
+	}
+	defer rows.Close()
+
+	var members []*model.Member
+
+	for rows.Next() {
+		member, err := scanMember(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan: %w", err)
+		}
+		members = append(members, member)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+
+	}
+	return members, nil
 }
