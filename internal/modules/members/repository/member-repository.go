@@ -56,3 +56,41 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 
 	return nil
 }
+
+func scanMember(rows *sql.Rows) (*model.Member, error) {
+	var member model.Member
+
+	err := rows.Scan(
+		&member.ID,
+		&member.NomeCompleto,
+		&member.NomeReligioso,
+		&member.CPF,
+		&member.RG,
+		&member.DataNascimento,
+		&member.Sexo,
+		&member.Telefone,
+		&member.Email,
+
+		&member.Endereco.Rua,
+		&member.Endereco.Numero,
+		&member.Endereco.Complemento,
+		&member.Endereco.Bairro,
+		&member.Endereco.Cidade,
+		&member.Endereco.Estado,
+		&member.Endereco.CEP,
+
+		&member.Cargo,
+		&member.Status,
+		&member.DataIniciacao,
+		&member.Observacoes,
+		&member.CreatedAt,
+		&member.UpdatedAt,
+		&member.DeletedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &member, nil
+}
