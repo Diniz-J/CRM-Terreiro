@@ -94,3 +94,35 @@ func scanMember(rows *sql.Rows) (*model.Member, error) {
 
 	return &member, nil
 }
+
+func scanMemberRow(row *sql.Row) (*model.Member, error) {
+	var member model.Member
+
+	err := row.Scan(
+		&member.ID,
+		&member.NomeCompleto,
+		&member.NomeReligioso,
+		&member.CPF,
+		&member.RG,
+		&member.DataNascimento,
+		&member.Sexo,
+		&member.Telefone,
+		&member.Email,
+
+		&member.Endereco.Rua,
+		&member.Endereco.Numero,
+		&member.Endereco.Complemento,
+		&member.Endereco.Bairro,
+		&member.Endereco.Cidade,
+		&member.Endereco.Estado,
+		&member.Endereco.CEP,
+
+		&member.Cargo,
+		&member.Status,
+		&member.DataIniciacao,
+		&member.Observacoes,
+		&member.CreatedAt,
+		&member.UpdatedAt,
+		&member.DeletedAt,
+	)
+}
