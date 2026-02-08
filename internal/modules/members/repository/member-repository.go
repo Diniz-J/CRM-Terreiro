@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/model"
@@ -13,56 +14,20 @@ type MemberRepository struct {
 }
 
 func NewMemberRepository(db *sql.DB) *MemberRepository {
-	return &MemberRepository{}
+	return &MemberRepository{db: db}
+}
+
+type scannable interface {
+	Scan(dest ...any) error
 }
 
 // Scan
-func scanMember(rows *sql.Rows) (*model.Member, error) {
+func scanMember(s scannable) (*model.Member, error) {
 	var member model.Member
 
 	member.Endereco = model.Endereco{} //Garantia de não ser nil
 
-	err := rows.Scan(
-		&member.ID,
-		&member.NomeCompleto,
-		&member.NomeReligioso,
-		&member.CPF,
-		&member.RG,
-		&member.DataNascimento,
-		&member.Sexo,
-		&member.Telefone,
-		&member.Email,
-
-		&member.Endereco.Rua,
-		&member.Endereco.Numero,
-		&member.Endereco.Complemento,
-		&member.Endereco.Bairro,
-		&member.Endereco.Cidade,
-		&member.Endereco.Estado,
-		&member.Endereco.CEP,
-
-		&member.Cargo,
-		&member.Status,
-		&member.DataIniciacao,
-		&member.Observacoes,
-		&member.CreatedAt,
-		&member.UpdatedAt,
-		&member.DeletedAt,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &member, nil
-}
-
-func scanMemberRow(row *sql.Row) (*model.Member, error) {
-	var member model.Member
-
-	member.Endereco = model.Endereco{} //Garantia de não ser nil
-
-	err := row.Scan(
+	err := s.Scan(
 		&member.ID,
 		&member.NomeCompleto,
 		&member.NomeReligioso,
@@ -148,10 +113,10 @@ func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Memb
 
 	row := r.db.QueryRowContext(ctx, query, id)
 
-	member, err := scanMemberRow(row)
+	member, err := scanMember(row)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New(fmt.Sprintf("Member with id %s not found", id))
 		}
 		return nil, fmt.Errorf("Failed to find member by id(%s): %w", id, err)
 	}
