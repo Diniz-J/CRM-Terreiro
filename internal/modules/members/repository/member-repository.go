@@ -58,6 +58,8 @@ func scanMember(rows *sql.Rows) (*model.Member, error) {
 func scanMemberRow(row *sql.Row) (*model.Member, error) {
 	var member model.Member
 
+	member.Endereco = model.Endereco{} //Garantia de não ser nil
+
 	err := row.Scan(
 		&member.ID,
 		&member.NomeCompleto,
@@ -93,13 +95,13 @@ func scanMemberRow(row *sql.Row) (*model.Member, error) {
 	return &member, nil
 }
 
-//Save new member
+// Save new member
 func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error {
 	query := `
 		INSERT INTO members (id, nome, nome_religioso, cpf, rg, data_nascimento, sexo, telefone, email,
 		endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado,
 		endereco_cep, cargo, status, odun, observacoes, created_at, updated_at) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -133,4 +135,23 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 	}
 
 	return nil
+}
+
+func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Member, error) {
+	query := `
+		SELECT id, nome, nome_religioso, cpf, rg, data_nascimento, sexo, telefone, email,
+		endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado,
+		endereco_cep, cargo, status, odun, observacoes, created_at, updated_at, deleted_at   FROM members 
+		WHERE id = ? AND deleted_at IS NULL`
+
+	row := r.db.QueryRowContext(ctx, query, id)
+
+	member, err := scanMemberRow(row)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("Failed to find member by id(%s): %w", id, err)
+	}
+	return member, nil
 }
