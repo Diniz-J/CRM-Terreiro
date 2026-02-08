@@ -29,7 +29,7 @@ func Load() *Config {
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "3306"),
 			Username: getEnv("DB_USER", "terreiro_user"),
-			Password: getEnv("DB_PASSWORD", "terreiro_password"),
+			Password: getEnv("DB_PASSWORD", "terreiro_pass"),
 			Name:     getEnv("DB_NAME", "terreiro_crm"),
 		},
 

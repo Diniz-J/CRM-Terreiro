@@ -9,9 +9,9 @@ type Member struct {
 	CPF            string     `db:"cpf" json:"cpf"`                                 //(string, único, validado)
 	RG             *string    `db:"rg" json:"rg,omitempty"`
 	DataNascimento time.Time  `db:"data_nascimento" json:"data_nascimento"`
-	Sexo           string     `db:"gênero" json:"gênero"`
-	Telefone       string     `db:"número" json:"número"` // (string, obrigatório, validado)
-	Email          string     `db:"email" json:"email"`   // (string, único, validado)
+	Sexo           string     `db:"sexo" json:"sexo"`
+	Telefone       string     `db:"telefone" json:"telefone"` // (string, obrigatório, validado)
+	Email          string     `db:"email" json:"email"`       // (string, único, validado)
 	Endereco       Endereco   `db:"endereco" json:"endereco"`
 	Cargo          string     `db:"cargo" json:"cargo"`
 	Status         string     `db:"status" json:"status"`
