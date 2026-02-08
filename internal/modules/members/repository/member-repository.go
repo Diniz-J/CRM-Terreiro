@@ -204,3 +204,15 @@ func (r *MemberRepository) Update(ctx context.Context, member *model.Member) err
 
 	return nil
 }
+
+func (r *MemberRepository) Delete(ctx context.Context, id string) error {
+	query := `
+		DELETE FROM members
+		WHERE id = ? AND deleted_at IS NULL`
+
+	_, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("delete member: %w", err)
+	}
+	return nil
+}
