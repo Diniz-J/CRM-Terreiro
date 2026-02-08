@@ -155,3 +155,52 @@ func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*mo
 	}
 	return members, nil
 }
+
+func (r *MemberRepository) Update(ctx context.Context, member *model.Member) error {
+	query := `
+		UPDATE members
+		SET nome = ?, nome_religioso = ?, cpf = ?, rg = ?, data_nascimento = ?, sexo = ?, telefone = ?,
+		email = ?, endereco_rua = ?, endereco_numero = ?, endereco_complemento = ?, endereco_bairro = ?,
+		endereco_cidade = ?, endereco_estado = ?, endereco_cep = ?, cargo = ?, status = ?, odun = ?, observacoes = ?
+		WHERE id = ?
+`
+	result, err := r.db.ExecContext(ctx, query,
+		member.NomeCompleto,
+		member.NomeReligioso,
+		member.CPF,
+		member.RG,
+		member.DataNascimento,
+		member.Sexo,
+		member.Telefone,
+		member.Email,
+
+		member.Endereco.Rua,
+		member.Endereco.Numero,
+		member.Endereco.Complemento,
+		member.Endereco.Bairro,
+		member.Endereco.Cidade,
+		member.Endereco.Estado,
+		member.Endereco.CEP,
+
+		member.Cargo,
+		member.Status,
+		member.DataIniciacao,
+		member.Observacoes,
+		member.UpdatedAt,
+
+		member.ID)
+	if err != nil {
+		return fmt.Errorf("update member: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return nil
+	}
+
+	return nil
+}
