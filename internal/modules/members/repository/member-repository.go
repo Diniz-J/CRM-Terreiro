@@ -54,7 +54,7 @@ func scanMember(s scannable) (*model.Member, error) {
 
 		&member.Cargo,
 		&member.Status,
-		&member.DataIniciacao,
+		&member.Odun,
 		&member.Observacoes,
 		&member.CreatedAt,
 		&member.UpdatedAt,
@@ -98,7 +98,7 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 
 		member.Cargo,
 		member.Status,
-		member.DataIniciacao,
+		member.Odun,
 		member.Observacoes,
 		member.CreatedAt,
 		member.UpdatedAt)
@@ -115,7 +115,8 @@ func (r *MemberRepository) Update(ctx context.Context, member *model.Member) err
 		UPDATE members
 		SET nome = ?, nome_religioso = ?, cpf = ?, rg = ?, data_nascimento = ?, sexo = ?, telefone = ?,
 		email = ?, endereco_rua = ?, endereco_numero = ?, endereco_complemento = ?, endereco_bairro = ?,
-		endereco_cidade = ?, endereco_estado = ?, endereco_cep = ?, cargo = ?, status = ?, odun = ?, observacoes = ?
+		endereco_cidade = ?, endereco_estado = ?, endereco_cep = ?, cargo = ?, status = ?, odun = ?, 
+		observacoes = ?, updated_at = NOW()
 		WHERE id = ?
 `
 	result, err := r.db.ExecContext(ctx, query,
@@ -138,9 +139,8 @@ func (r *MemberRepository) Update(ctx context.Context, member *model.Member) err
 
 		member.Cargo,
 		member.Status,
-		member.DataIniciacao,
+		member.Odun,
 		member.Observacoes,
-		member.UpdatedAt,
 
 		member.ID)
 	if err != nil {
@@ -153,7 +153,7 @@ func (r *MemberRepository) Update(ctx context.Context, member *model.Member) err
 	}
 
 	if rows == 0 {
-		return nil
+		return sql.ErrNoRows
 	}
 
 	return nil
@@ -161,13 +161,23 @@ func (r *MemberRepository) Update(ctx context.Context, member *model.Member) err
 
 func (r *MemberRepository) Delete(ctx context.Context, id string) error {
 	query := `
-		DELETE FROM members
+		UPDATE members
+		SET deleted_at = NOW()
 		WHERE id = ? AND deleted_at IS NULL`
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("delete member: %w", err)
 	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("rows affected: %w", err)
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
 	return nil
 }
 
@@ -181,7 +191,7 @@ func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Memb
 	member, err := scanMember(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("failed to found id(%s): %w", id, err)
+			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to scan id(%s): %w", id, err)
 	}

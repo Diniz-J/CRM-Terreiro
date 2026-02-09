@@ -15,7 +15,7 @@ type Member struct {
 	Endereco       Endereco   `db:"endereco" json:"endereco"`
 	Cargo          string     `db:"cargo" json:"cargo"`
 	Status         string     `db:"status" json:"status"`
-	DataIniciacao  *time.Time `db:"odun" json:"odun,omitempty"`
+	Odun           *time.Time `db:"odun" json:"odun,omitempty"`
 	Observacoes    *string    `db:"observacoes" json:"observacoes,omitempty"`
 	CreatedAt      time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time  `db:"updated_at" json:"updated_at"`
