@@ -74,7 +74,7 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 		INSERT INTO members (id, nome, nome_religioso, cpf, rg, data_nascimento, sexo, telefone, email,
 		endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado,
 		endereco_cep, cargo, status, odun, observacoes, created_at, updated_at) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
 		`
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -99,9 +99,7 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 		member.Cargo,
 		member.Status,
 		member.Odun,
-		member.Observacoes,
-		member.CreatedAt,
-		member.UpdatedAt)
+		member.Observacoes)
 
 	if err != nil {
 		return fmt.Errorf("insert member: %w", err)
