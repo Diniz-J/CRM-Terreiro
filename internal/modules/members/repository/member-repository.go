@@ -196,6 +196,32 @@ func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Memb
 	return member, nil
 }
 
+func (r *MemberRepository) FindAll(ctx context.Context) ([]model.Member, error) {
+	query := `
+		SELECT ` + memberSelectColumns + ` FROM members
+		WHERE deleted_at IS NULL`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find all members: %w", err)
+	}
+	defer rows.Close()
+
+	members := make([]model.Member, 0)
+
+	for rows.Next() {
+		member, err := scanMember(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan member: %w", err)
+		}
+		members = append(members, *member)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate all members: %w", err)
+	}
+	return members, nil
+}
+
 func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*model.Member, error) {
 	query := `
 		SELECT ` + memberSelectColumns + ` FROM members 
