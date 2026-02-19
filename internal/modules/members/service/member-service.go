@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/model"
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/repository"
+	shared "github.com/Diniz-J/teiunecc-admin/internal/shared/validator"
 	"github.com/google/uuid"
 )
 
@@ -42,15 +44,15 @@ type MemberInput struct {
 
 func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*model.Member, error) {
 	if !shared.CPF(input.CPF) {
-		return nil, fmt.Errorf("cpf inválido")
+		return nil, fmt.Errorf("invalid CPF")
 	}
 
 	if !shared.Email(input.Email) {
-		return nil, fmt.Errorf("email inválido")
+		return nil, fmt.Errorf("invalid email")
 	}
 
 	if !shared.Phone(input.Telefone) {
-		return nil, fmt.Errorf("telefone inválido")
+		return nil, fmt.Errorf("invalid phone")
 	}
 
 	now := time.Now()
@@ -86,4 +88,17 @@ func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*m
 
 	return member, nil
 
+}
+
+func (s *MemberService) GetMember(ctx context.Context, id string) (*model.Member, error) {
+	member, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if member == nil {
+		return nil, errors.New("member not found")
+	}
+
+	return member, nil
 }
