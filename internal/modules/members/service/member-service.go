@@ -102,3 +102,49 @@ func (s *MemberService) GetMember(ctx context.Context, id string) (*model.Member
 
 	return member, nil
 }
+
+func (s *MemberService) UpdateMember(ctx context.Context, id string, input MemberInput) (*model.Member, error) {
+	if !shared.CPF(input.CPF) {
+		return nil, fmt.Errorf("invalid CPF")
+	}
+
+	if !shared.Email(input.Email) {
+		return nil, fmt.Errorf("invalid email")
+	}
+
+	if !shared.Phone(input.Telefone) {
+		return nil, fmt.Errorf("invalid phone")
+	}
+
+	now := time.Now()
+	member := &model.Member{
+		ID:             id,
+		NomeCompleto:   input.NomeCompleto,
+		NomeReligioso:  input.NomeReligioso,
+		CPF:            input.CPF,
+		RG:             input.RG,
+		DataNascimento: input.DataNascimento,
+		Sexo:           input.Sexo,
+		Telefone:       input.Telefone,
+		Email:          input.Email,
+		Cargo:          input.Cargo,
+		Status:         input.Status,
+		Odun:           input.Odun,
+		Observacoes:    input.Observacoes,
+		Endereco: model.Endereco{
+			Rua:         input.Rua,
+			Numero:      input.Numero,
+			Complemento: input.Complemento,
+			Bairro:      input.Bairro,
+			Cidade:      input.Cidade,
+			Estado:      input.Estado,
+			CEP:         input.CEP,
+		},
+		UpdatedAt: now,
+	}
+	if err := s.repo.Update(ctx, member); err != nil {
+		return nil, fmt.Errorf("failed to update member: %w", err)
+	}
+
+	return s.repo.FindByID(ctx, id)
+}
