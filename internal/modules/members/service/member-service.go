@@ -155,3 +155,11 @@ func (s *MemberService) DeleteMember(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (s *MemberService) ListMembers(ctx context.Context) ([]model.Member, error) {
+	member, err := s.repo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return member, nil
+}
