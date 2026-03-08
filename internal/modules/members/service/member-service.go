@@ -148,3 +148,10 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 
 	return s.repo.FindByID(ctx, id)
 }
+
+func (s *MemberService) DeleteMember(ctx context.Context, id string) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("failed to delete member: %w", err)
+	}
+	return nil
+}
