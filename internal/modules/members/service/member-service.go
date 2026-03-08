@@ -7,16 +7,31 @@ import (
 	"time"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/model"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/repository"
 	shared "github.com/Diniz-J/teiunecc-admin/internal/shared/validator"
 	"github.com/google/uuid"
 )
 
-type MemberService struct {
-	repo *repository.MemberRepository
+var (
+	ErrMemberNotFound = errors.New("member not found")
+	ErrInvalidCPF     = errors.New("invalid CPF")
+	ErrInvalidEmail   = errors.New("invalid email")
+	ErrInvalidPhone   = errors.New("invalid phone")
+)
+
+type MemberRepository interface {
+	Save(ctx context.Context, member *model.Member) error
+	FindByID(ctx context.Context, id string) (*model.Member, error)
+	Update(ctx context.Context, member *model.Member) error
+	Delete(ctx context.Context, id string) error
+	FindAll(ctx context.Context) ([]model.Member, error)
+	SearchByName(ctx context.Context, nome string) ([]*model.Member, error)
 }
 
-func NewMemberService(repo *repository.MemberRepository) *MemberService {
+type MemberService struct {
+	repo MemberRepository
+}
+
+func NewMemberService(repo MemberRepository) *MemberService {
 	return &MemberService{repo: repo}
 }
 
@@ -44,15 +59,15 @@ type MemberInput struct {
 
 func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*model.Member, error) {
 	if !shared.CPF(input.CPF) {
-		return nil, fmt.Errorf("invalid CPF")
+		return nil, ErrInvalidCPF
 	}
 
 	if !shared.Email(input.Email) {
-		return nil, fmt.Errorf("invalid email")
+		return nil, ErrInvalidEmail
 	}
 
 	if !shared.Phone(input.Telefone) {
-		return nil, fmt.Errorf("invalid phone")
+		return nil, ErrInvalidPhone
 	}
 
 	now := time.Now()
@@ -93,30 +108,37 @@ func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*m
 func (s *MemberService) GetMember(ctx context.Context, id string) (*model.Member, error) {
 	member, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get member: %w", err)
 	}
 
 	if member == nil {
-		return nil, errors.New("member not found")
+		return nil, ErrMemberNotFound
 	}
 
 	return member, nil
 }
 
 func (s *MemberService) UpdateMember(ctx context.Context, id string, input MemberInput) (*model.Member, error) {
+	existing, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find member to update: %w", err)
+	}
+	if existing == nil {
+		return nil, ErrMemberNotFound
+	}
+
 	if !shared.CPF(input.CPF) {
-		return nil, fmt.Errorf("invalid CPF")
+		return nil, ErrInvalidCPF
 	}
 
 	if !shared.Email(input.Email) {
-		return nil, fmt.Errorf("invalid email")
+		return nil, ErrInvalidEmail
 	}
 
 	if !shared.Phone(input.Telefone) {
-		return nil, fmt.Errorf("invalid phone")
+		return nil, ErrInvalidPhone
 	}
 
-	now := time.Now()
 	member := &model.Member{
 		ID:             id,
 		NomeCompleto:   input.NomeCompleto,
@@ -140,7 +162,6 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 			Estado:      input.Estado,
 			CEP:         input.CEP,
 		},
-		UpdatedAt: now,
 	}
 	if err := s.repo.Update(ctx, member); err != nil {
 		return nil, fmt.Errorf("failed to update member: %w", err)
@@ -150,6 +171,14 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 }
 
 func (s *MemberService) DeleteMember(ctx context.Context, id string) error {
+	existing, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to search member: %w", err)
+	}
+	if existing == nil {
+		return ErrMemberNotFound
+	}
+
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete member: %w", err)
 	}
@@ -159,7 +188,19 @@ func (s *MemberService) DeleteMember(ctx context.Context, id string) error {
 func (s *MemberService) ListMembers(ctx context.Context) ([]model.Member, error) {
 	member, err := s.repo.FindAll(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list all members: %w", err)
+	}
+	return member, nil
+}
+
+func (s *MemberService) SearchByName(ctx context.Context, nome string) ([]*model.Member, error) {
+	member, err := s.repo.SearchByName(ctx, nome)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search name: %w", err)
+	}
+
+	if member == nil {
+		return nil, ErrMemberNotFound
 	}
 	return member, nil
 }
