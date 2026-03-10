@@ -19,6 +19,11 @@ func NewMemberHandler(service *service.MemberService) *MemberHandler {
 }
 
 func (h *MemberHandler) handleServiceError(w http.ResponseWriter, err error) {
+	if errors.Is(err, service.ErrMemberNotFound) {
+		response.Error(w, http.StatusNotFound, "NOT_FOUND", err.Error())
+		return
+	}
+
 	if errors.Is(err, service.ErrInvalidCPF) ||
 		errors.Is(err, service.ErrInvalidEmail) ||
 		errors.Is(err, service.ErrInvalidPhone) {
@@ -47,6 +52,10 @@ func (h *MemberHandler) CreateMember(w http.ResponseWriter, r *http.Request) {
 func (h *MemberHandler) UpdateMember(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	if id == "" {
+		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", "missing id")
+		return
+	}
 
 	var input service.MemberInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -60,5 +69,22 @@ func (h *MemberHandler) UpdateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, member)
+	response.JSON(w, http.StatusOK, member)
+}
+
+func (h *MemberHandler) DeleteMember(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	if id == "" {
+		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", "missing id")
+		return
+	}
+
+	err := h.service.DeleteMember(r.Context(), id)
+	if err != nil {
+		h.handleServiceError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
