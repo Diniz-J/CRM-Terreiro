@@ -107,25 +107,18 @@ func (h *MemberHandler) GetMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MemberHandler) ListMembers(w http.ResponseWriter, r *http.Request) {
+	nome := r.URL.Query().Get("nome")
 
+	if nome != "" {
+		member, err := h.service.SearchByName(r.Context(), nome)
+		if err != nil {
+			h.handleServiceError(w, err)
+			return
+		}
+		response.JSON(w, http.StatusOK, member)
+		return
+	}
 	member, err := h.service.ListMembers(r.Context())
-	if err != nil {
-		h.handleServiceError(w, err)
-		return
-	}
-
-	response.JSON(w, http.StatusOK, member)
-}
-
-func (h *MemberHandler) SearchByName(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	nome := vars["nome"]
-	if nome == "" {
-		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", "missing nome")
-		return
-	}
-
-	member, err := h.service.SearchByName(r.Context(), nome)
 	if err != nil {
 		h.handleServiceError(w, err)
 		return
