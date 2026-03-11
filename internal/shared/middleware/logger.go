@@ -20,7 +20,7 @@ func Logger(next http.Handler) http.Handler {
 
 // AUTHENTICATION MIDDLEWARE
 
-func authMiddleware(next http.Handler) http.Handler {
+func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		if token == "" {
@@ -39,7 +39,7 @@ func authMiddleware(next http.Handler) http.Handler {
 
 // CORS MIDDLEWARE
 
-func corsMiddleware(next http.Handler) http.Handler {
+func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
@@ -58,7 +58,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 var requestCounts = make(map[string]int)
 
 // *** ADD SYNC MUTEX
-func rateLimitMiddleware(maxRequests int, windowSeconds int) func(handler http.Handler) http.Handler {
+func RateLimitMiddleware(maxRequests int, windowSeconds int) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := r.RemoteAddr
@@ -91,7 +91,7 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
-func metricsMiddleware(next http.Handler) http.Handler {
+func MetricsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rw := &responseWriter{ResponseWriter: w}
 		next.ServeHTTP(rw, r)
@@ -101,7 +101,7 @@ func metricsMiddleware(next http.Handler) http.Handler {
 
 // CHAIN DE MIDDLEWARES
 
-func chain(handlers ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+func Chain(handlers ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
 	return func(final http.Handler) http.Handler {
 		for i := len(handlers) - 1; i >= 0; i-- {
 			final = handlers[i](final)
