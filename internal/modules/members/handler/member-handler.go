@@ -1,13 +1,10 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
-	"net/http"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/service"
-	"github.com/Diniz-J/teiunecc-admin/internal/shared/response"
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
 )
 
 type MemberHandler struct {
@@ -18,111 +15,133 @@ func NewMemberHandler(service *service.MemberService) *MemberHandler {
 	return &MemberHandler{service: service}
 }
 
-func (h *MemberHandler) handleServiceError(w http.ResponseWriter, err error) {
+func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
 	if errors.Is(err, service.ErrMemberNotFound) {
-		response.Error(w, http.StatusNotFound, "NOT_FOUND", err.Error())
-		return
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "NOT_FOUND",
+				"message": err.Error(),
+			},
+		})
 	}
-
 	if errors.Is(err, service.ErrInvalidCPF) ||
 		errors.Is(err, service.ErrInvalidEmail) ||
 		errors.Is(err, service.ErrInvalidPhone) {
-		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", err.Error())
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": err.Error(),
+			},
+		})
 	}
-	response.Error(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		"error": fiber.Map{
+			"code":    "INTERNAL_ERROR",
+			"message": err.Error(),
+		},
+	})
 }
 
-func (h *MemberHandler) CreateMember(w http.ResponseWriter, r *http.Request) {
+func (h *MemberHandler) CreateMember(c *fiber.Ctx) error {
 	var input service.MemberInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", "invalid body")
-		return
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "invalid body",
+			},
+		})
 	}
 
-	member, err := h.service.CreateMember(r.Context(), input)
+	member, err := h.service.CreateMember(c.Context(), input)
 	if err != nil {
-		h.handleServiceError(w, err)
-		return
+		return h.handleServiceError(c, err)
 	}
 
-	response.JSON(w, http.StatusCreated, member)
+	return c.Status(fiber.StatusCreated).JSON(member)
 }
 
-func (h *MemberHandler) UpdateMember(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func (h *MemberHandler) UpdateMember(c *fiber.Ctx) error {
+	id := c.Params("id")
 	if id == "" {
-		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", "missing id")
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "missing id",
+			},
+		})
 	}
 
 	var input service.MemberInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", "invalid body")
-		return
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "invalid body",
+			},
+		})
 	}
 
-	member, err := h.service.UpdateMember(r.Context(), id, input)
+	member, err := h.service.UpdateMember(c.Context(), id, input)
 	if err != nil {
-		h.handleServiceError(w, err)
-		return
+		return h.handleServiceError(c, err)
 	}
 
-	response.JSON(w, http.StatusOK, member)
+	return c.Status(fiber.StatusOK).JSON(member)
 }
 
-func (h *MemberHandler) DeleteMember(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func (h *MemberHandler) DeleteMember(c *fiber.Ctx) error {
+	id := c.Params("id")
 	if id == "" {
-		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", "missing id")
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "missing id",
+			},
+		})
 	}
 
-	err := h.service.DeleteMember(r.Context(), id)
+	err := h.service.DeleteMember(c.Context(), id)
 	if err != nil {
-		h.handleServiceError(w, err)
-		return
+		return h.handleServiceError(c, err)
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
-func (h *MemberHandler) GetMember(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func (h *MemberHandler) GetMember(c *fiber.Ctx) error {
+	id := c.Params("id")
 	if id == "" {
-		response.Error(w, http.StatusBadRequest, "BAD_REQUEST", "missing id")
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "missing id",
+			},
+		})
 	}
 
-	member, err := h.service.GetMember(r.Context(), id)
+	member, err := h.service.GetMember(c.Context(), id)
 	if err != nil {
-		h.handleServiceError(w, err)
-		return
+		return h.handleServiceError(c, err)
 	}
 
-	response.JSON(w, http.StatusOK, member)
+	return c.Status(fiber.StatusOK).JSON(member)
 }
 
-func (h *MemberHandler) ListMembers(w http.ResponseWriter, r *http.Request) {
-	nome := r.URL.Query().Get("nome")
+func (h *MemberHandler) ListMembers(c *fiber.Ctx) error {
+	nome := c.Query("nome")
 
 	if nome != "" {
-		member, err := h.service.SearchByName(r.Context(), nome)
+		members, err := h.service.SearchByName(c.Context(), nome)
 		if err != nil {
-			h.handleServiceError(w, err)
-			return
+			return h.handleServiceError(c, err)
 		}
-		response.JSON(w, http.StatusOK, member)
-		return
+		return c.Status(fiber.StatusOK).JSON(members)
 	}
-	member, err := h.service.ListMembers(r.Context())
+	members, err := h.service.ListMembers(c.Context())
 	if err != nil {
-		h.handleServiceError(w, err)
-		return
+		return h.handleServiceError(c, err)
 	}
 
-	response.JSON(w, http.StatusOK, member)
+	return c.Status(fiber.StatusOK).JSON(members)
 }

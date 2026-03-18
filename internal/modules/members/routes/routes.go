@@ -2,13 +2,13 @@ package routes
 
 import (
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/handler"
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
 )
 
-func MemberRoutes(r *mux.Router, h *handler.MemberHandler) {
-	r.HandleFunc("/members", h.ListMembers).Methods("GET")
-	r.HandleFunc("/members", h.CreateMember).Methods("POST")
-	r.HandleFunc("/members/{id}", h.GetMember).Methods("GET")
-	r.HandleFunc("/members/{id}", h.UpdateMember).Methods("PUT")
-	r.HandleFunc("/members/{id}", h.DeleteMember).Methods("DELETE")
+func MemberRoutes(app *fiber.App, h *handler.MemberHandler) {
+	app.Get("/members", h.ListMembers)
+	app.Post("/members", h.CreateMember)
+	app.Get("/members/:id", h.GetMember)
+	app.Put("/members/:id", h.UpdateMember)
+	app.Delete("/members/:id", h.DeleteMember)
 }
