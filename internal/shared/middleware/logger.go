@@ -2,110 +2,77 @@ package middleware
 
 import (
 	"log"
-	"net/http"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-// MIDDLEWARE LOGGER
-
-func Logger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		log.Printf("[%s] %s %s", r.Method, r.RequestURI, r.RemoteAddr)
-		next.ServeHTTP(w, r)
-		log.Printf("response time: %v", time.Since(start))
-	})
+func Logger(c *fiber.Ctx) error {
+	start := time.Now()
+	log.Printf("[%s] %s %s", c.Method(), c.Path(), c.IP())
+	err := c.Next()
+	log.Printf("response time: %v", time.Since(start))
+	return err
 }
 
-// AUTHENTICATION MIDDLEWARE
-
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token == "" {
-			http.Error(w, "Missing authorization header", http.StatusUnauthorized)
-			return
-		}
-
-		if !strings.HasPrefix(token, "Bearer ") {
-			http.Error(w, "Invalid token format", http.StatusUnauthorized)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// CORS MIDDLEWARE
-
-func CorsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// RATE LIMITING MIDDLEWARE
-var requestCounts = make(map[string]int)
-
-// *** ADD SYNC MUTEX
-func RateLimitMiddleware(maxRequests int, windowSeconds int) func(handler http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip := r.RemoteAddr
-			requestCounts[ip]++
-
-			if requestCounts[ip] > maxRequests {
-				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
-				return
-			}
-
-			go func() {
-				time.Sleep(time.Duration(windowSeconds) * time.Second)
-				requestCounts[ip] = 0
-			}()
-
-			next.ServeHTTP(w, r)
-		})
+func AuthMiddleware(c *fiber.Ctx) error {
+	token := c.Get("Authorization")
+	if token == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Missing authorization header"})
 	}
+	if !strings.HasPrefix(token, "Bearer ") {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token format"})
+	}
+	return c.Next()
 }
 
-// CUSTOM RESPONSE WRAPPER
+func CorsMiddleware(c *fiber.Ctx) error {
+	c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-type responseWriter struct {
-	http.ResponseWriter
-	statusCode int
+	if c.Method() == fiber.MethodOptions {
+		return c.SendStatus(fiber.StatusOK)
+	}
+
+	return c.Next()
 }
 
-func (rw *responseWriter) WriteHeader(code int) {
-	rw.statusCode = code
-	rw.ResponseWriter.WriteHeader(code)
+func MetricsMiddleware(c *fiber.Ctx) error {
+	err := c.Next()
+	log.Printf("[METRICS] %s %s - Status: %d", c.Method(), c.Path(), c.Response().StatusCode())
+	return err
 }
 
-func MetricsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rw := &responseWriter{ResponseWriter: w}
-		next.ServeHTTP(rw, r)
-		log.Printf("[METRICS] %s %s - Status: %d", r.Method, r.RequestURI, rw.statusCode)
-	})
+// NewRateLimiter retorna um middleware com mutex correto
+type rateLimiter struct {
+	mu     sync.Mutex
+	counts map[string]int
 }
 
-// CHAIN DE MIDDLEWARES
+func NewRateLimiter(maxRequests int, windowSeconds int) fiber.Handler {
+	rl := &rateLimiter{counts: make(map[string]int)}
+	return func(c *fiber.Ctx) error {
+		ip := c.IP()
 
-func Chain(handlers ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
-	return func(final http.Handler) http.Handler {
-		for i := len(handlers) - 1; i >= 0; i-- {
-			final = handlers[i](final)
+		rl.mu.Lock()
+		rl.counts[ip]++
+		count := rl.counts[ip]
+		rl.mu.Unlock()
+
+		if count > maxRequests {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"error": "Rate limit exceeded"})
 		}
-		return final
+
+		go func() {
+			time.Sleep(time.Duration(windowSeconds) * time.Second)
+			rl.mu.Lock()
+			rl.counts[ip] = 0
+			rl.mu.Unlock()
+		}()
+
+		return c.Next()
 	}
 }

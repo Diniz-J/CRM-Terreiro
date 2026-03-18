@@ -3,6 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/handler"
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/repository"
@@ -11,7 +14,7 @@ import (
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/config"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/database"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/middleware"
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
@@ -34,13 +37,21 @@ func main() {
 	memberHandler := handler.NewMemberHandler(memberService)
 
 	// TODO: Configurar rotas
-	r := mux.NewRouter()
-	routes.MemberRoutes(r, memberHandler)
+	app := fiber.New()
 
-	//Middlewares
-	chain := middleware.Chain(middleware.Logger, middleware.CorsMiddleware)
-	http.Handle("/", chain(r))
+	app.Use(middleware.Logger)
+	app.Use(middleware.CorsMiddleware)
 
+	routes.MemberRoutes(app, memberHandler)
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-quit
+		log.Println("Shutting down server...")
+		_ = app.Shutdown()
+	}()
 	log.Printf("Servidor rodando na porta %s", cfg.Server.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Server.Port, nil))
 }
