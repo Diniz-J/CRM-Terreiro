@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -53,5 +52,5 @@ func main() {
 		_ = app.Shutdown()
 	}()
 	log.Printf("Servidor rodando na porta %s", cfg.Server.Port)
-	log.Fatal(http.ListenAndServe(":"+cfg.Server.Port, nil))
+	log.Fatal(app.Listen(":" + cfg.Server.Port))
 }
