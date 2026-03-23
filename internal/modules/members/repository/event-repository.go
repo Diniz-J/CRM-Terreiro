@@ -111,3 +111,32 @@ func (r *EventRepository) ListEvents(ctx context.Context) ([]model.Event, error)
 	}
 	return events, nil
 }
+
+func (r *EventRepository) UpdateEvent(ctx context.Context, event *model.Event) error {
+	query := `
+		UPDATE events
+		SET name = ?, date = ?, description = ?, location = ?, event_type = ?, event_status = ?, updated_at = NOW()
+		WHERE id = ? AND deleted_at IS NULL
+	`
+
+	result, err := r.db.ExecContext(ctx, query,
+		event.ID,
+		event.Name,
+		event.Date,
+		event.Description,
+		event.EventType,
+		event.EventStatus,
+		event.Location)
+	if err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("event not found")
+	}
+
+	return nil
+}
