@@ -81,3 +81,33 @@ func (r *EventRepository) GetEventByID(ctx context.Context, id string) (*model.E
 	}
 	return event, nil
 }
+
+func (r *EventRepository) ListEvents(ctx context.Context) ([]model.Event, error) {
+	query := `
+		SELECT ` + eventSelectColumns + ` FROM events
+		WHERE deleted_at IS NULL
+	`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list events: %w", err)
+	}
+	defer rows.Close()
+
+	var events []model.Event
+
+	for rows.Next() {
+		event, err := scanEvent(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan event: %w", err)
+		}
+		if event == nil {
+			continue
+		}
+
+		events = append(events, *event)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate events: %w", err)
+	}
+	return events, nil
+}
