@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/model"
 )
@@ -160,4 +161,41 @@ func (r *EventRepository) DeleteEvent(ctx context.Context, id string) error {
 		return fmt.Errorf("event not found")
 	}
 	return nil
+}
+
+func (r *EventRepository) GetEventsByDate(ctx context.Context, date time.Time) ([]model.Event, error) {
+	start := date.Truncate(24 * time.Hour)
+	end := date.Add(24 * time.Hour)
+
+	query := `
+		SELECT ` + eventSelectColumns + ` FROM events
+		WHERE date >= ? AND date < ? AND deleted_at IS NULL
+	`
+	rows, err := r.db.QueryContext(ctx, query, start, end)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get events by date: %w", err)
+	}
+	defer rows.Close()
+
+	var events []model.Event
+
+	for rows.Next() {
+		event, err := scanEvent(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan events: %w", err)
+		}
+
+		if event == nil {
+			continue
+		}
+
+		events = append(events, *event)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate events: %w", err)
+	}
+
+	return events, nil
+
 }
