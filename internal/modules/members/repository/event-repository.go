@@ -140,3 +140,24 @@ func (r *EventRepository) UpdateEvent(ctx context.Context, event *model.Event) e
 
 	return nil
 }
+
+func (r *EventRepository) DeleteEvent(ctx context.Context, id string) error {
+	query := `
+		UPDATE events
+		SET deleted_at = NOW()
+		WHERE id = ? AND deleted_at IS NULL
+		`
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete event: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("event not found")
+	}
+	return nil
+}
