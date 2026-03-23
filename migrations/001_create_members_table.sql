@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS members (
     endereco_cep VARCHAR(10) DEFAULT NULL COMMENT 'CEP XXXXX-XXX',
 
     -- INFORMAÇÕES RELIGIOSAS
-    cargo ENUM('Membro', 'Iniciado', 'Ogan', 'Ekeji', 'Sacerdote', 'Pai Pequeno', 'Mãe Pequena') DEFAULT 'membro' COMMENT 'Cargo no terreiro',
+    cargo ENUM('Membro', 'Iniciado', 'Ogan', 'Ekeji', 'Sacerdote', 'Pai Pequeno', 'Mãe Pequena') DEFAULT 'Membro' COMMENT 'Cargo no terreiro',
     status ENUM('ativo', 'inativo', 'afastado') DEFAULT 'ativo' COMMENT 'Status do membro',
     odun DATE DEFAULT NULL COMMENT 'Data de iniciação (se aplicável)',
     observacoes TEXT DEFAULT NULL COMMENT 'Observações gerais',
@@ -38,11 +38,11 @@ CREATE TABLE IF NOT EXISTS members (
     deleted_at TIMESTAMP NULL DEFAULT NULL COMMENT 'Data de exclusão (soft delete)',
 
     -- Índice para performance
-    INDEX idx_cpf (cpf),
-    INDEX idx_email (email),
-    INDEX idx_nome (nome),
-    INDEX idx_status (status),
-    INDEX idx_cargo (cargo),
-    INDEX idx_deleted_at (deleted_at)
+    INDEX idx_members_cpf (cpf),
+    INDEX idx_members_email (email),
+    INDEX idx_members_nome (nome),
+    INDEX idx_members_status (status),
+    INDEX idx_members_cargo (cargo),
+    INDEX idx_members_deleted_at (deleted_at)
 
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tabelas de membros do terreiro'
