@@ -37,7 +37,7 @@ func (h *EventHandler) handleServiceError(c *fiber.Ctx, err error) error {
 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 		"error": fiber.Map{
 			"code":    "INTERNAL_ERROR",
-			"message": err.Error(),
+			"message": "internal server error",
 		},
 	})
 }
@@ -63,14 +63,6 @@ func (h *EventHandler) CreateEvent(c *fiber.Ctx) error {
 
 func (h *EventHandler) GetEventByID(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if id == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "BAD_REQUEST",
-				"message": "invalid id",
-			},
-		})
-	}
 
 	event, err := h.service.GetEventByID(c.Context(), id)
 	if err != nil {
@@ -94,14 +86,6 @@ func (h *EventHandler) ListEvents(c *fiber.Ctx) error {
 
 func (h *EventHandler) UpdateEvent(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if id == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "BAD_REQUEST",
-				"message": "invalid id",
-			},
-		})
-	}
 
 	var input service.EventInput
 	if err := c.BodyParser(&input); err != nil {
@@ -123,14 +107,6 @@ func (h *EventHandler) UpdateEvent(c *fiber.Ctx) error {
 
 func (h *EventHandler) DeleteEvent(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if id == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "BAD_REQUEST",
-				"message": "invalid id",
-			},
-		})
-	}
 
 	err := h.service.DeleteEvent(c.Context(), id)
 	if err != nil {
