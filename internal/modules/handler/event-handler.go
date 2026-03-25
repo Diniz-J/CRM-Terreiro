@@ -67,7 +67,7 @@ func (h *EventHandler) GetEventByID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
-				"message": "invalid body",
+				"message": "invalid id",
 			},
 		})
 	}
@@ -98,7 +98,7 @@ func (h *EventHandler) UpdateEvent(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
-				"message": "invalid body",
+				"message": "invalid id",
 			},
 		})
 	}
@@ -127,7 +127,7 @@ func (h *EventHandler) DeleteEvent(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
-				"message": "invalid body",
+				"message": "invalid id",
 			},
 		})
 	}

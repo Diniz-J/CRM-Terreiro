@@ -39,7 +39,7 @@ func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 		"error": fiber.Map{
 			"code":    "INTERNAL_ERROR",
-			"message": err.Error(),
+			"message": "internal server error",
 		},
 	})
 }
