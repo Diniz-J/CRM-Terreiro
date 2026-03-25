@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/model"
-	shared "github.com/Diniz-J/teiunecc-admin/internal/shared/validator"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
+	"github.com/Diniz-J/teiunecc-admin/internal/shared/validator"
 	"github.com/google/uuid"
 )
 
@@ -58,15 +58,15 @@ type MemberInput struct {
 }
 
 func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*model.Member, error) {
-	if !shared.CPF(input.CPF) {
+	if !validator.CPF(input.CPF) {
 		return nil, ErrInvalidCPF
 	}
 
-	if !shared.Email(input.Email) {
+	if !validator.Email(input.Email) {
 		return nil, ErrInvalidEmail
 	}
 
-	if !shared.Phone(input.Telefone) {
+	if !validator.Phone(input.Telefone) {
 		return nil, ErrInvalidPhone
 	}
 
@@ -127,15 +127,15 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 		return nil, ErrMemberNotFound
 	}
 
-	if !shared.CPF(input.CPF) {
+	if !validator.CPF(input.CPF) {
 		return nil, ErrInvalidCPF
 	}
 
-	if !shared.Email(input.Email) {
+	if !validator.Email(input.Email) {
 		return nil, ErrInvalidEmail
 	}
 
-	if !shared.Phone(input.Telefone) {
+	if !validator.Phone(input.Telefone) {
 		return nil, ErrInvalidPhone
 	}
 

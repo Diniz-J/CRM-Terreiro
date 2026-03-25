@@ -3,7 +3,7 @@ package handler
 import (
 	"errors"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/service"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 	"github.com/gofiber/fiber/v2"
 )
 

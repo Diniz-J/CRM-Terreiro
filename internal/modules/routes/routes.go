@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/handler"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/handler"
 	"github.com/gofiber/fiber/v2"
 )
 

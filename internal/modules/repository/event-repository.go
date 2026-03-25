@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/model"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
 )
 
 type EventRepository struct {
