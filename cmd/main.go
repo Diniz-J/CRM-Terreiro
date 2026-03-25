@@ -35,11 +35,14 @@ func main() {
 	}
 	log.Println("Migrations applied")
 
-
 	// TODO: Inicializar módulos (members, payments, etc)
 	memberRepo := repository.NewMemberRepository(db)
 	memberService := service.NewMemberService(memberRepo)
 	memberHandler := handler.NewMemberHandler(memberService)
+
+	eventRepo := repository.NewEventRepository(db)
+	eventService := service.NewEventService(eventRepo)
+	eventHandler := handler.NewEventHandler(eventService)
 
 	// TODO: Configurar rotas
 	app := fiber.New()
@@ -48,6 +51,7 @@ func main() {
 	app.Use(middleware.CorsMiddleware)
 
 	routes.MemberRoutes(app, memberHandler)
+	routes.EventRoutes(app, eventHandler)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
