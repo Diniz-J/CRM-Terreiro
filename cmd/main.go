@@ -30,6 +30,12 @@ func main() {
 
 	log.Println("Connected to database")
 
+	if err := database.RunMigrations(db, "migrations"); err != nil {
+		log.Fatalf("Error running migrations: %v", err)
+	}
+	log.Println("Migrations applied")
+
+
 	// TODO: Inicializar módulos (members, payments, etc)
 	memberRepo := repository.NewMemberRepository(db)
 	memberService := service.NewMemberService(memberRepo)
