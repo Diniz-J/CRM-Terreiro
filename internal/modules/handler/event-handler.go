@@ -15,7 +15,7 @@ func NewEventHandler(service *service.EventService) *EventHandler {
 	return &EventHandler{service: service}
 }
 
-func (h *EventHandler) handleServiceError (c *fiber.Ctx, err error) error {
+func (h *EventHandler) handleServiceError(c *fiber.Ctx, err error) error {
 	if errors.Is(err, service.ErrEventNotFound) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -60,5 +60,21 @@ func (h *EventHandler) CreateEvent(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(member)
 }
 
-func (h *EventHandler)
+func (h *EventHandler) GetEventByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "invalid body",
+			},
+		})
+	}
 
+	member, err := h.service.GetEventByID(c.Context(), id)
+	if err != nil {
+		return h.handleServiceError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(member)
+}
