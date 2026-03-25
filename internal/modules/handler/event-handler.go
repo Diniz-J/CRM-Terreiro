@@ -53,12 +53,12 @@ func (h *EventHandler) CreateEvent(c *fiber.Ctx) error {
 		})
 	}
 
-	member, err := h.service.CreateEvent(c.Context(), input)
+	event, err := h.service.CreateEvent(c.Context(), input)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(member)
+	return c.Status(fiber.StatusCreated).JSON(event)
 }
 
 func (h *EventHandler) GetEventByID(c *fiber.Ctx) error {
@@ -72,12 +72,12 @@ func (h *EventHandler) GetEventByID(c *fiber.Ctx) error {
 		})
 	}
 
-	member, err := h.service.GetEventByID(c.Context(), id)
+	event, err := h.service.GetEventByID(c.Context(), id)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(member)
+	return c.Status(fiber.StatusOK).JSON(event)
 }
 
 func (h *EventHandler) ListEvents(c *fiber.Ctx) error {
@@ -90,4 +90,52 @@ func (h *EventHandler) ListEvents(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(events)
+}
+
+func (h *EventHandler) UpdateEvent(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "invalid body",
+			},
+		})
+	}
+
+	var input service.EventInput
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "invalid body",
+			},
+		})
+	}
+
+	event, err := h.service.UpdateEvent(c.Context(), id, input)
+	if err != nil {
+		return h.handleServiceError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(event)
+}
+
+func (h *EventHandler) DeleteEvent(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "invalid body",
+			},
+		})
+	}
+
+	err := h.service.DeleteEvent(c.Context(), id)
+	if err != nil {
+		return h.handleServiceError(c, err)
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }
