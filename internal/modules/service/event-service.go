@@ -62,3 +62,15 @@ func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*mode
 
 	return event, nil
 }
+
+func (s *EventService) GetEventByID(ctx context.Context, id string) (*model.Event, error) {
+	event, err := s.repo.GetEventByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get event by id: %w", err)
+	}
+
+	if event == nil {
+		return nil, fmt.Errorf("event not found")
+	}
+	return event, nil
+}
