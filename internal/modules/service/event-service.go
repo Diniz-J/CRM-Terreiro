@@ -74,3 +74,48 @@ func (s *EventService) GetEventByID(ctx context.Context, id string) (*model.Even
 	}
 	return event, nil
 }
+
+func (s *EventService) ListEvents(ctx context.Context) ([]model.Event, error) {
+	events, err := s.repo.ListEvents(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list events: %w", err)
+	}
+	return events, nil
+}
+
+func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventInput) (*model.Event, error) {
+	existing, err := s.repo.GetEventByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find event to update: %w", err)
+	}
+
+	if existing == nil {
+		return nil, fmt.Errorf("event not found")
+	}
+
+	date, err := time.Parse("2006-01-02", input.Date)
+	if err != nil {
+		return nil, fmt.Errorf("invalid date format, expected YYYY-MM-DD: %w", err)
+	}
+
+	if input.Name == "" || input.EventType == "" || input.EventStatus == "" {
+		return nil, fmt.Errorf("name, event_type and event_status are required")
+	}
+
+	event := &model.Event{
+		ID:          existing.ID,
+		Name:        input.Name,
+		Date:        date,
+		Description: input.Description,
+		EventType:   input.EventType,
+		EventStatus: input.EventStatus,
+		Location:    input.Location,
+		UpdatedAt:   time.Now(),
+	}
+
+	if err := s.repo.UpdateEvent(ctx, event); err != nil {
+		return nil, fmt.Errorf("failed to update event: %w", err)
+	}
+
+	return event, nil
+}
