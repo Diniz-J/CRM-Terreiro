@@ -119,3 +119,18 @@ func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventIn
 
 	return event, nil
 }
+
+func (s *EventService) DeleteEvent(ctx context.Context, id string) error {
+	existing, err := s.repo.GetEventByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to find event to delete: %w", err)
+	}
+	if existing == nil {
+		return fmt.Errorf("event not found")
+	}
+
+	if err := s.repo.DeleteEvent(ctx, id); err != nil {
+		return fmt.Errorf("failed to delete event: %w", err)
+	}
+	return nil
+}
