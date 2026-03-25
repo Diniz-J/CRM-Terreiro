@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/model"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 )
 
 type MemberRepository struct {
@@ -102,10 +104,20 @@ func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error
 		member.Observacoes)
 
 	if err != nil {
+		if isDuplicateEntry(err, "cpf") {
+			return service.ErrDuplicateCPF
+		}
+		if isDuplicateEntry(err, "email") {
+			return service.ErrDuplicateEmail
+		}
 		return fmt.Errorf("insert member: %w", err)
 	}
 
 	return nil
+}
+
+func isDuplicateEntry(err error, field string) bool {
+	return strings.Contains(err.Error(), "Error 1062") && strings.Contains(err.Error(), field)
 }
 
 func (r *MemberRepository) Update(ctx context.Context, member *model.Member) error {

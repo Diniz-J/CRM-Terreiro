@@ -2,15 +2,14 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/handler"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/repository"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/routes"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/service"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/handler"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/repository"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/routes"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/config"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/database"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/middleware"
@@ -31,10 +30,19 @@ func main() {
 
 	log.Println("Connected to database")
 
+	if err := database.RunMigrations(db, "migrations"); err != nil {
+		log.Fatalf("Error running migrations: %v", err)
+	}
+	log.Println("Migrations applied")
+
 	// TODO: Inicializar módulos (members, payments, etc)
 	memberRepo := repository.NewMemberRepository(db)
 	memberService := service.NewMemberService(memberRepo)
 	memberHandler := handler.NewMemberHandler(memberService)
+
+	eventRepo := repository.NewEventRepository(db)
+	eventService := service.NewEventService(eventRepo)
+	eventHandler := handler.NewEventHandler(eventService)
 
 	// TODO: Configurar rotas
 	app := fiber.New()
@@ -43,6 +51,7 @@ func main() {
 	app.Use(middleware.CorsMiddleware)
 
 	routes.MemberRoutes(app, memberHandler)
+	routes.EventRoutes(app, eventHandler)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
@@ -53,5 +62,5 @@ func main() {
 		_ = app.Shutdown()
 	}()
 	log.Printf("Servidor rodando na porta %s", cfg.Server.Port)
-	log.Fatal(http.ListenAndServe(":"+cfg.Server.Port, nil))
+	log.Fatal(app.Listen(":" + cfg.Server.Port))
 }

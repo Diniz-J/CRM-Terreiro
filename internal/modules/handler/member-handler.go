@@ -3,7 +3,7 @@ package handler
 import (
 	"errors"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/members/service"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -26,7 +26,9 @@ func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
 	}
 	if errors.Is(err, service.ErrInvalidCPF) ||
 		errors.Is(err, service.ErrInvalidEmail) ||
-		errors.Is(err, service.ErrInvalidPhone) {
+		errors.Is(err, service.ErrInvalidPhone) ||
+		errors.Is(err, service.ErrDuplicateCPF) ||
+		errors.Is(err, service.ErrDuplicateEmail) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
@@ -37,7 +39,7 @@ func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 		"error": fiber.Map{
 			"code":    "INTERNAL_ERROR",
-			"message": err.Error(),
+			"message": "internal server error",
 		},
 	})
 }
