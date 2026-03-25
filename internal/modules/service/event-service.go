@@ -2,11 +2,18 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
 	"github.com/google/uuid"
+)
+
+var (
+	ErrEventNotFound        = errors.New("event not found")
+	ErrInvalidDate          = errors.New("invalid date format, expected YYYY-MM-DD")
+	ErrMissingRequiredFields = errors.New("name, event_type and event_status are required")
 )
 
 type EventRepository interface {
@@ -36,12 +43,12 @@ type EventInput struct {
 
 func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*model.Event, error) {
 	if input.Name == "" || input.EventType == "" || input.EventStatus == "" {
-		return nil, fmt.Errorf("name, event_type and event_status are required")
+		return nil, ErrMissingRequiredFields
 	}
 
 	date, err := time.Parse("2006-01-02", input.Date)
 	if err != nil {
-		return nil, fmt.Errorf("invalid date format, expected YYYY-MM-DD: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidDate, err)
 	}
 
 	now := time.Now()
@@ -70,7 +77,7 @@ func (s *EventService) GetEventByID(ctx context.Context, id string) (*model.Even
 	}
 
 	if event == nil {
-		return nil, fmt.Errorf("event not found")
+		return nil, ErrEventNotFound
 	}
 	return event, nil
 }
@@ -90,16 +97,16 @@ func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventIn
 	}
 
 	if existing == nil {
-		return nil, fmt.Errorf("event not found")
+		return nil, ErrEventNotFound
 	}
 
 	date, err := time.Parse("2006-01-02", input.Date)
 	if err != nil {
-		return nil, fmt.Errorf("invalid date format, expected YYYY-MM-DD: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidDate, err)
 	}
 
 	if input.Name == "" || input.EventType == "" || input.EventStatus == "" {
-		return nil, fmt.Errorf("name, event_type and event_status are required")
+		return nil, ErrMissingRequiredFields
 	}
 
 	event := &model.Event{
@@ -126,7 +133,7 @@ func (s *EventService) DeleteEvent(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to find event to delete: %w", err)
 	}
 	if existing == nil {
-		return fmt.Errorf("event not found")
+		return ErrEventNotFound
 	}
 
 	if err := s.repo.DeleteEvent(ctx, id); err != nil {
