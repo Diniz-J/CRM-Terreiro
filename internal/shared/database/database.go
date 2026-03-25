@@ -40,6 +40,8 @@ func Connect(cfg config.DatabaseConfig) (*sql.DB, error) {
 	return db, nil
 }
 
+const migrationsPath = "migrations"
+
 func RunMigrations(db *sql.DB, migrationsPath string) error {
 	driver, err := mysql.WithInstance(db, &mysql.Config{})
 	if err != nil {
