@@ -57,9 +57,9 @@ func (r *EventRepository) CreateEvent(ctx context.Context, event *model.Event) e
 		event.Name,
 		event.Date,
 		event.Description,
+		event.Location,
 		event.EventType,
-		event.EventStatus,
-		event.Location)
+		event.EventStatus)
 
 	if err != nil {
 		return fmt.Errorf("create event: %w", err)
@@ -121,13 +121,13 @@ func (r *EventRepository) UpdateEvent(ctx context.Context, event *model.Event) e
 	`
 
 	result, err := r.db.ExecContext(ctx, query,
-		event.ID,
 		event.Name,
 		event.Date,
 		event.Description,
+		event.Location,
 		event.EventType,
 		event.EventStatus,
-		event.Location)
+		event.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
 	}
