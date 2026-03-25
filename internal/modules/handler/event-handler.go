@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -77,4 +78,16 @@ func (h *EventHandler) GetEventByID(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(member)
+}
+
+func (h *EventHandler) ListEvents(c *fiber.Ctx) error {
+	events, err := h.service.ListEvents(c.Context())
+	if err != nil {
+		return h.handleServiceError(c, err)
+	}
+	if events == nil {
+		events = []model.Event{}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(events)
 }
