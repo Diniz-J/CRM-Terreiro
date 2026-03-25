@@ -26,7 +26,9 @@ func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
 	}
 	if errors.Is(err, service.ErrInvalidCPF) ||
 		errors.Is(err, service.ErrInvalidEmail) ||
-		errors.Is(err, service.ErrInvalidPhone) {
+		errors.Is(err, service.ErrInvalidPhone) ||
+		errors.Is(err, service.ErrDuplicateCPF) ||
+		errors.Is(err, service.ErrDuplicateEmail) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",

@@ -16,6 +16,8 @@ var (
 	ErrInvalidCPF     = errors.New("invalid CPF")
 	ErrInvalidEmail   = errors.New("invalid email")
 	ErrInvalidPhone   = errors.New("invalid phone")
+	ErrDuplicateCPF   = errors.New("CPF already registered")
+	ErrDuplicateEmail = errors.New("email already registered")
 )
 
 type MemberRepository interface {
@@ -36,25 +38,25 @@ func NewMemberService(repo MemberRepository) *MemberService {
 }
 
 type MemberInput struct {
-	NomeCompleto   string
-	NomeReligioso  *string
-	CPF            string
-	RG             *string
-	DataNascimento time.Time
-	Sexo           string
-	Telefone       string
-	Email          string
-	Cargo          string
-	Status         string
-	Odun           *time.Time
-	Observacoes    *string
-	Rua            *string
-	Numero         *string
-	Complemento    *string
-	Bairro         *string
-	Cidade         *string
-	Estado         *string
-	CEP            *string
+	NomeCompleto   string     `json:"nome"`
+	NomeReligioso  *string    `json:"nome_religioso"`
+	CPF            string     `json:"cpf"`
+	RG             *string    `json:"rg"`
+	DataNascimento time.Time  `json:"data_nascimento"`
+	Sexo           string     `json:"sexo"`
+	Telefone       string     `json:"telefone"`
+	Email          string     `json:"email"`
+	Cargo          string     `json:"cargo"`
+	Status         string     `json:"status"`
+	Odun           *time.Time `json:"odun"`
+	Observacoes    *string    `json:"observacoes"`
+	Rua            *string    `json:"rua"`
+	Numero         *string    `json:"numero"`
+	Complemento    *string    `json:"complemento"`
+	Bairro         *string    `json:"bairro"`
+	Cidade         *string    `json:"cidade"`
+	Estado         *string    `json:"estado"`
+	CEP            *string    `json:"cep"`
 }
 
 func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*model.Member, error) {
