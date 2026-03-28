@@ -80,3 +80,63 @@ func (r *AttendanceRepository) GetAttendanceByID(ctx context.Context, id string)
 
 	return attendance, nil
 }
+
+func (r *AttendanceRepository) ListAttendancesByEvent(ctx context.Context, eventID string) ([]model.Attendance, error) {
+	query := `
+		SELECT ` + attendanceSelectColumns + ` FROM attendances 
+		WHERE event_id = ? AND deleted_at IS NULL`
+
+	rows, err := r.db.QueryContext(ctx, query, eventID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list attendances: %w", err)
+	}
+	defer rows.Close()
+
+	var attendances []model.Attendance
+
+	for rows.Next() {
+		attendance, err := scanAttendance(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan attendances: %w", err)
+		}
+		if attendance == nil {
+			continue
+		}
+
+		attendances = append(attendances, *attendance)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate attendances: %w", err)
+	}
+	return attendances, nil
+}
+
+func (r *AttendanceRepository) ListAttendancesByMember(ctx context.Context, memberID string) ([]model.Attendance, error) {
+	query := `
+		SELECT ` + attendanceSelectColumns + ` FROM attendances 
+		WHERE member_id = ? AND deleted_at IS NULL`
+
+	rows, err := r.db.QueryContext(ctx, query, memberID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list attendances: %w", err)
+	}
+	defer rows.Close()
+
+	var attendances []model.Attendance
+
+	for rows.Next() {
+		attendance, err := scanAttendance(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan attendances: %w", err)
+		}
+		if attendance == nil {
+			continue
+		}
+
+		attendances = append(attendances, *attendance)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate attendances: %w", err)
+	}
+	return attendances, nil
+}
