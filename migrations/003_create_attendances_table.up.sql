@@ -3,7 +3,7 @@
 -- Data: 2026-02-08
 
 CREATE TABLE IF NOT EXISTS attendances (
-    id VARCHAR(36) PRIMARY KEY COMMENT 'ID da inscrição',
+    id VARCHAR(36) PRIMARY KEY COMMENT 'UUID da inscrição',
     event_id VARCHAR(36) NOT NULL COMMENT 'ID do evento',
     member_id VARCHAR(36) NOT NULL COMMENT 'ID do usuário',
     status ENUM('Presente', 'Ausente', 'Justificado', 'Pendente') DEFAULT 'Pendente' COMMENT 'Status da inscrição',
