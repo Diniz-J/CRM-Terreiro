@@ -140,3 +140,51 @@ func (r *AttendanceRepository) ListAttendancesByMember(ctx context.Context, memb
 	}
 	return attendances, nil
 }
+
+func (r *AttendanceRepository) UpdateAttendance(ctx context.Context, attendance *model.Attendance) error {
+	query := `
+		UPDATE attendances
+		SET status = ?, notes = ?, marked_at = ?, marked_by = ?, updated_at = NOW()
+		WHERE id = ? AND deleted_at IS NULL`
+
+	result, err := r.db.ExecContext(ctx, query,
+		attendance.Status,
+		attendance.Notes,
+		attendance.MarkedAt,
+		attendance.MarkedBy,
+		attendance.ID)
+
+	if err != nil {
+		return fmt.Errorf("failed to update attendance: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("attendance not found")
+	}
+
+	return nil
+}
+
+func (r *AttendanceRepository) DeleteAttendance(ctx context.Context, attendanceID string) error {
+	query := `
+		UPDATE attendances
+		SET deleted_at = NOW()
+		WHERE id = ?`
+
+	result, err := r.db.ExecContext(ctx, query, attendanceID)
+	if err != nil {
+		return fmt.Errorf("failed to delete attendance: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("attendance not found")
+	}
+
+	return nil
+}
