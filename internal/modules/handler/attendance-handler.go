@@ -47,7 +47,7 @@ func (h *AttendanceHandler) MarkAttendance(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
-				"message": err.Error(),
+				"message": "invalid request body",
 			},
 		})
 	}
@@ -58,4 +58,23 @@ func (h *AttendanceHandler) MarkAttendance(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(attendance)
+}
+
+func (h *AttendanceHandler) GetAttendanceByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "id is required",
+			},
+		})
+	}
+
+	attendance, err := h.service.GetAttendanceByID(c.Context(), id)
+	if err != nil {
+		return h.handleAttendanceError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(attendance)
 }
