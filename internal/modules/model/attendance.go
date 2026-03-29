@@ -8,10 +8,10 @@ type Attendance struct {
 	MemberID  string     `db:"member_id" json:"member_id"`
 	Notes     *string    `db:"notes" json:"notes,omitempty"`
 	Status    string     `db:"status" json:"status"`
-	MarkedAt  *time.Time `db:"marked_at" json:"marked_at,omitempty"`
+	MarkedAt  time.Time  `db:"marked_at" json:"marked_at"`
 	MarkedBy  *string    `db:"marked_by" json:"marked_by,omitempty"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt *time.Time `db:"updated_at" json:"updated_at,omitempty"`
+	UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
 	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at,omitempty"`
 }
 

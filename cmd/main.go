@@ -14,9 +14,13 @@ import (
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/database"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/middleware"
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("Arquivo .env nao encontrado, usando variaveis de ambiente do sistema")
+	}
 
 	//carregar config
 	cfg := config.Load()
@@ -44,6 +48,10 @@ func main() {
 	eventService := service.NewEventService(eventRepo)
 	eventHandler := handler.NewEventHandler(eventService)
 
+	attendanceRepo := repository.NewAttendanceRepository(db)
+	attendanceService := service.NewAttendanceService(attendanceRepo)
+	attendanceHandler := handler.NewAttendanceHandler(attendanceService)
+
 	// TODO: Configurar rotas
 	app := fiber.New()
 
@@ -52,6 +60,7 @@ func main() {
 
 	routes.MemberRoutes(app, memberHandler)
 	routes.EventRoutes(app, eventHandler)
+	routes.AttendanceRoutes(app, attendanceHandler)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)

@@ -20,3 +20,12 @@ func EventRoutes(app *fiber.App, h *handler.EventHandler) {
 	app.Put("/events/:id", h.UpdateEvent)
 	app.Delete("/events/:id", h.DeleteEvent)
 }
+
+func AttendanceRoutes(app *fiber.App, h *handler.AttendanceHandler) {
+	app.Get("/events/:event_id/attendances", h.ListAttendancesByEvent)
+	app.Get("/members/:member_id/attendances", h.ListAttendancesByMember)
+	app.Post("/attendances", h.MarkAttendance)
+	app.Get("/attendances/:id", h.GetAttendanceByID)
+	app.Put("/attendances/:id", h.UpdateAttendance)
+	app.Delete("/attendances/:id", h.DeleteAttendance)
+}

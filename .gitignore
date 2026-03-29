@@ -48,3 +48,6 @@ temp/
 # Docker volumes
 data/
 mysql_data/
+
+# AI
+.claude/
