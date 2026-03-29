@@ -1,4 +1,4 @@
-package service
+package attendance
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
 	"github.com/google/uuid"
 )
 
@@ -15,20 +14,20 @@ var (
 	ErrMissingRequirement = errors.New("event_id, member_id and status are required")
 )
 
-type AttendanceRepository interface {
-	MarkAttendance(ctx context.Context, attendance *model.Attendance) error
-	GetAttendanceByID(ctx context.Context, id string) (*model.Attendance, error)
-	ListAttendancesByEvent(ctx context.Context, eventID string) ([]model.Attendance, error)
-	ListAttendancesByMember(ctx context.Context, memberID string) ([]model.Attendance, error)
-	UpdateAttendance(ctx context.Context, attendance *model.Attendance) error
+type AttendanceRepositoryInterface interface {
+	MarkAttendance(ctx context.Context, a *Attendance) error
+	GetAttendanceByID(ctx context.Context, id string) (*Attendance, error)
+	ListAttendancesByEvent(ctx context.Context, eventID string) ([]Attendance, error)
+	ListAttendancesByMember(ctx context.Context, memberID string) ([]Attendance, error)
+	UpdateAttendance(ctx context.Context, a *Attendance) error
 	DeleteAttendance(ctx context.Context, id string) error
 }
 
 type AttendanceService struct {
-	repo AttendanceRepository
+	repo AttendanceRepositoryInterface
 }
 
-func NewAttendanceService(repo AttendanceRepository) *AttendanceService {
+func NewAttendanceService(repo AttendanceRepositoryInterface) *AttendanceService {
 	return &AttendanceService{repo: repo}
 }
 
@@ -41,7 +40,7 @@ type AttendanceInput struct {
 	MarkedBy *string    `json:"marked_by"`
 }
 
-func (s *AttendanceService) MarkAttendance(ctx context.Context, input AttendanceInput) (*model.Attendance, error) {
+func (s *AttendanceService) MarkAttendance(ctx context.Context, input AttendanceInput) (*Attendance, error) {
 	if input.EventID == "" || input.MemberID == "" || input.Status == "" {
 		return nil, ErrMissingRequirement
 	}
@@ -51,7 +50,7 @@ func (s *AttendanceService) MarkAttendance(ctx context.Context, input Attendance
 	if input.MarkedAt != nil {
 		markedAt = *input.MarkedAt
 	}
-	attendance := &model.Attendance{
+	a := &Attendance{
 		ID:        uuid.New().String(),
 		EventID:   input.EventID,
 		MemberID:  input.MemberID,
@@ -63,26 +62,26 @@ func (s *AttendanceService) MarkAttendance(ctx context.Context, input Attendance
 		UpdatedAt: now,
 	}
 
-	err := s.repo.MarkAttendance(ctx, attendance)
+	err := s.repo.MarkAttendance(ctx, a)
 	if err != nil {
 		return nil, fmt.Errorf("failed to mark attendance: %w", err)
 	}
 
-	return attendance, nil
+	return a, nil
 }
 
-func (s *AttendanceService) GetAttendanceByID(ctx context.Context, id string) (*model.Attendance, error) {
-	attendance, err := s.repo.GetAttendanceByID(ctx, id)
+func (s *AttendanceService) GetAttendanceByID(ctx context.Context, id string) (*Attendance, error) {
+	a, err := s.repo.GetAttendanceByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get attendance: %w", err)
 	}
-	if attendance == nil {
+	if a == nil {
 		return nil, ErrAttendanceNotFound
 	}
-	return attendance, nil
+	return a, nil
 }
 
-func (s *AttendanceService) ListAttendancesByEvent(ctx context.Context, eventID string) ([]model.Attendance, error) {
+func (s *AttendanceService) ListAttendancesByEvent(ctx context.Context, eventID string) ([]Attendance, error) {
 	attendances, err := s.repo.ListAttendancesByEvent(ctx, eventID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list attendances: %w", err)
@@ -90,7 +89,7 @@ func (s *AttendanceService) ListAttendancesByEvent(ctx context.Context, eventID 
 	return attendances, nil
 }
 
-func (s *AttendanceService) ListAttendancesByMember(ctx context.Context, memberID string) ([]model.Attendance, error) {
+func (s *AttendanceService) ListAttendancesByMember(ctx context.Context, memberID string) ([]Attendance, error) {
 	attendances, err := s.repo.ListAttendancesByMember(ctx, memberID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list attendances: %w", err)
@@ -98,7 +97,7 @@ func (s *AttendanceService) ListAttendancesByMember(ctx context.Context, memberI
 	return attendances, nil
 }
 
-func (s *AttendanceService) UpdateAttendance(ctx context.Context, id string, input AttendanceInput) (*model.Attendance, error) {
+func (s *AttendanceService) UpdateAttendance(ctx context.Context, id string, input AttendanceInput) (*Attendance, error) {
 	existing, err := s.repo.GetAttendanceByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find attendance to update: %w", err)
@@ -116,7 +115,7 @@ func (s *AttendanceService) UpdateAttendance(ctx context.Context, id string, inp
 	if input.MarkedAt != nil {
 		markedAt = *input.MarkedAt
 	}
-	attendance := &model.Attendance{
+	a := &Attendance{
 		ID:        existing.ID,
 		EventID:   input.EventID,
 		MemberID:  input.MemberID,
@@ -128,11 +127,11 @@ func (s *AttendanceService) UpdateAttendance(ctx context.Context, id string, inp
 		UpdatedAt: now,
 	}
 
-	if err := s.repo.UpdateAttendance(ctx, attendance); err != nil {
+	if err := s.repo.UpdateAttendance(ctx, a); err != nil {
 		return nil, fmt.Errorf("failed to update attendance: %w", err)
 	}
 
-	return attendance, nil
+	return a, nil
 }
 
 func (s *AttendanceService) DeleteAttendance(ctx context.Context, id string) error {

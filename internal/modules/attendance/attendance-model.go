@@ -1,4 +1,4 @@
-package model
+package attendance
 
 import "time"
 
@@ -30,7 +30,7 @@ type AttendanceResponse struct {
 	Status   string    `json:"status"`
 	MarkedAt time.Time `json:"marked_at"`
 	Notes    *string   `json:"notes,omitempty"`
-	Message  string    `json:"message"` // Presença marcada com sucesso
+	Message  string    `json:"message"`
 }
 
 const (

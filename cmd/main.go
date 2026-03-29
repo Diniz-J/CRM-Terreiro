@@ -6,10 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/handler"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/repository"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/routes"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/attendance"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/event"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/member"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/config"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/database"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/middleware"
@@ -39,28 +38,26 @@ func main() {
 	}
 	log.Println("Migrations applied")
 
-	// TODO: Inicializar módulos (members, payments, etc)
-	memberRepo := repository.NewMemberRepository(db)
-	memberService := service.NewMemberService(memberRepo)
-	memberHandler := handler.NewMemberHandler(memberService)
+	memberRepo := member.NewMemberRepository(db)
+	memberService := member.NewMemberService(memberRepo)
+	memberHandler := member.NewMemberHandler(memberService)
 
-	eventRepo := repository.NewEventRepository(db)
-	eventService := service.NewEventService(eventRepo)
-	eventHandler := handler.NewEventHandler(eventService)
+	eventRepo := event.NewEventRepository(db)
+	eventService := event.NewEventService(eventRepo)
+	eventHandler := event.NewEventHandler(eventService)
 
-	attendanceRepo := repository.NewAttendanceRepository(db)
-	attendanceService := service.NewAttendanceService(attendanceRepo)
-	attendanceHandler := handler.NewAttendanceHandler(attendanceService)
+	attendanceRepo := attendance.NewAttendanceRepository(db)
+	attendanceService := attendance.NewAttendanceService(attendanceRepo)
+	attendanceHandler := attendance.NewAttendanceHandler(attendanceService)
 
-	// TODO: Configurar rotas
 	app := fiber.New()
 
 	app.Use(middleware.Logger)
 	app.Use(middleware.CorsMiddleware)
 
-	routes.MemberRoutes(app, memberHandler)
-	routes.EventRoutes(app, eventHandler)
-	routes.AttendanceRoutes(app, attendanceHandler)
+	member.Routes(app, memberHandler)
+	event.Routes(app, eventHandler)
+	attendance.Routes(app, attendanceHandler)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)

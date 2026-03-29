@@ -1,4 +1,4 @@
-package repository
+package member
 
 import (
 	"context"
@@ -6,9 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 )
 
 type MemberRepository struct {
@@ -30,85 +27,85 @@ const memberSelectColumns = `
 `
 
 // Scan
-func scanMember(s scannable) (*model.Member, error) {
-	var member model.Member
+func scanMember(s scannable) (*Member, error) {
+	var m Member
 
-	member.Endereco = model.Endereco{} //Garantia de não ser nil
+	m.Endereco = Endereco{} //Garantia de não ser nil
 
 	err := s.Scan(
-		&member.ID,
-		&member.NomeCompleto,
-		&member.NomeReligioso,
-		&member.CPF,
-		&member.RG,
-		&member.DataNascimento,
-		&member.Sexo,
-		&member.Telefone,
-		&member.Email,
+		&m.ID,
+		&m.NomeCompleto,
+		&m.NomeReligioso,
+		&m.CPF,
+		&m.RG,
+		&m.DataNascimento,
+		&m.Sexo,
+		&m.Telefone,
+		&m.Email,
 
-		&member.Endereco.Rua,
-		&member.Endereco.Numero,
-		&member.Endereco.Complemento,
-		&member.Endereco.Bairro,
-		&member.Endereco.Cidade,
-		&member.Endereco.Estado,
-		&member.Endereco.CEP,
+		&m.Endereco.Rua,
+		&m.Endereco.Numero,
+		&m.Endereco.Complemento,
+		&m.Endereco.Bairro,
+		&m.Endereco.Cidade,
+		&m.Endereco.Estado,
+		&m.Endereco.CEP,
 
-		&member.Cargo,
-		&member.Status,
-		&member.Odun,
-		&member.Observacoes,
-		&member.CreatedAt,
-		&member.UpdatedAt,
-		&member.DeletedAt,
+		&m.Cargo,
+		&m.Status,
+		&m.Odun,
+		&m.Observacoes,
+		&m.CreatedAt,
+		&m.UpdatedAt,
+		&m.DeletedAt,
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &member, nil
+	return &m, nil
 }
 
-// Save new member
-func (r *MemberRepository) Save(ctx context.Context, member *model.Member) error {
+// Save salva um novo membro
+func (r *MemberRepository) Save(ctx context.Context, m *Member) error {
 	query := `
 		INSERT INTO members (id, nome, nome_religioso, cpf, rg, data_nascimento, sexo, telefone, email,
 		endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado,
-		endereco_cep, cargo, status, odun, observacoes, created_at, updated_at) 
+		endereco_cep, cargo, status, odun, observacoes, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
 		`
 
 	_, err := r.db.ExecContext(ctx, query,
-		member.ID,
-		member.NomeCompleto,
-		member.NomeReligioso,
-		member.CPF,
-		member.RG,
-		member.DataNascimento,
-		member.Sexo,
-		member.Telefone,
-		member.Email,
+		m.ID,
+		m.NomeCompleto,
+		m.NomeReligioso,
+		m.CPF,
+		m.RG,
+		m.DataNascimento,
+		m.Sexo,
+		m.Telefone,
+		m.Email,
 
-		member.Endereco.Rua,
-		member.Endereco.Numero,
-		member.Endereco.Complemento,
-		member.Endereco.Bairro,
-		member.Endereco.Cidade,
-		member.Endereco.Estado,
-		member.Endereco.CEP,
+		m.Endereco.Rua,
+		m.Endereco.Numero,
+		m.Endereco.Complemento,
+		m.Endereco.Bairro,
+		m.Endereco.Cidade,
+		m.Endereco.Estado,
+		m.Endereco.CEP,
 
-		member.Cargo,
-		member.Status,
-		member.Odun,
-		member.Observacoes)
+		m.Cargo,
+		m.Status,
+		m.Odun,
+		m.Observacoes)
 
 	if err != nil {
 		if isDuplicateEntry(err, "cpf") {
-			return service.ErrDuplicateCPF
+			return ErrDuplicateCPF
 		}
 		if isDuplicateEntry(err, "email") {
-			return service.ErrDuplicateEmail
+			return ErrDuplicateEmail
 		}
 		return fmt.Errorf("insert member: %w", err)
 	}
@@ -120,39 +117,39 @@ func isDuplicateEntry(err error, field string) bool {
 	return strings.Contains(err.Error(), "Error 1062") && strings.Contains(err.Error(), field)
 }
 
-func (r *MemberRepository) Update(ctx context.Context, member *model.Member) error {
+func (r *MemberRepository) Update(ctx context.Context, m *Member) error {
 	query := `
 		UPDATE members
 		SET nome = ?, nome_religioso = ?, cpf = ?, rg = ?, data_nascimento = ?, sexo = ?, telefone = ?,
 		email = ?, endereco_rua = ?, endereco_numero = ?, endereco_complemento = ?, endereco_bairro = ?,
-		endereco_cidade = ?, endereco_estado = ?, endereco_cep = ?, cargo = ?, status = ?, odun = ?, 
+		endereco_cidade = ?, endereco_estado = ?, endereco_cep = ?, cargo = ?, status = ?, odun = ?,
 		observacoes = ?, updated_at = NOW()
 		WHERE id = ?
 `
 	result, err := r.db.ExecContext(ctx, query,
-		member.NomeCompleto,
-		member.NomeReligioso,
-		member.CPF,
-		member.RG,
-		member.DataNascimento,
-		member.Sexo,
-		member.Telefone,
-		member.Email,
+		m.NomeCompleto,
+		m.NomeReligioso,
+		m.CPF,
+		m.RG,
+		m.DataNascimento,
+		m.Sexo,
+		m.Telefone,
+		m.Email,
 
-		member.Endereco.Rua,
-		member.Endereco.Numero,
-		member.Endereco.Complemento,
-		member.Endereco.Bairro,
-		member.Endereco.Cidade,
-		member.Endereco.Estado,
-		member.Endereco.CEP,
+		m.Endereco.Rua,
+		m.Endereco.Numero,
+		m.Endereco.Complemento,
+		m.Endereco.Bairro,
+		m.Endereco.Cidade,
+		m.Endereco.Estado,
+		m.Endereco.CEP,
 
-		member.Cargo,
-		member.Status,
-		member.Odun,
-		member.Observacoes,
+		m.Cargo,
+		m.Status,
+		m.Odun,
+		m.Observacoes,
 
-		member.ID)
+		m.ID)
 	if err != nil {
 		return fmt.Errorf("update member: %w", err)
 	}
@@ -191,24 +188,24 @@ func (r *MemberRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *MemberRepository) FindByID(ctx context.Context, id string) (*model.Member, error) {
+func (r *MemberRepository) FindByID(ctx context.Context, id string) (*Member, error) {
 	query := `
-		SELECT ` + memberSelectColumns + ` FROM members 
+		SELECT ` + memberSelectColumns + ` FROM members
 		WHERE id = ? AND deleted_at IS NULL`
 
 	row := r.db.QueryRowContext(ctx, query, id)
 
-	member, err := scanMember(row)
+	m, err := scanMember(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to scan id(%s): %w", id, err)
 	}
-	return member, nil
+	return m, nil
 }
 
-func (r *MemberRepository) FindAll(ctx context.Context) ([]model.Member, error) {
+func (r *MemberRepository) FindAll(ctx context.Context) ([]Member, error) {
 	query := `
 		SELECT ` + memberSelectColumns + ` FROM members
 		WHERE deleted_at IS NULL`
@@ -219,14 +216,14 @@ func (r *MemberRepository) FindAll(ctx context.Context) ([]model.Member, error) 
 	}
 	defer rows.Close()
 
-	members := make([]model.Member, 0)
+	members := make([]Member, 0)
 
 	for rows.Next() {
-		member, err := scanMember(rows)
+		m, err := scanMember(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan member: %w", err)
 		}
-		members = append(members, *member)
+		members = append(members, *m)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate all members: %w", err)
@@ -234,9 +231,9 @@ func (r *MemberRepository) FindAll(ctx context.Context) ([]model.Member, error) 
 	return members, nil
 }
 
-func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*model.Member, error) {
+func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*Member, error) {
 	query := `
-		SELECT ` + memberSelectColumns + ` FROM members 
+		SELECT ` + memberSelectColumns + ` FROM members
 		WHERE nome LIKE ? AND deleted_at IS NULL`
 
 	search := "%" + nome + "%"
@@ -247,18 +244,17 @@ func (r *MemberRepository) SearchByName(ctx context.Context, nome string) ([]*mo
 	}
 	defer rows.Close()
 
-	var members []*model.Member
+	var members []*Member
 
 	for rows.Next() {
-		member, err := scanMember(rows)
+		m, err := scanMember(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan: %w", err)
 		}
-		members = append(members, member)
+		members = append(members, m)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
-
 	}
 	return members, nil
 }

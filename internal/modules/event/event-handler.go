@@ -1,23 +1,21 @@
-package handler
+package event
 
 import (
 	"errors"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 	"github.com/gofiber/fiber/v2"
 )
 
 type EventHandler struct {
-	service *service.EventService
+	service *EventService
 }
 
-func NewEventHandler(service *service.EventService) *EventHandler {
+func NewEventHandler(service *EventService) *EventHandler {
 	return &EventHandler{service: service}
 }
 
 func (h *EventHandler) handleServiceError(c *fiber.Ctx, err error) error {
-	if errors.Is(err, service.ErrEventNotFound) {
+	if errors.Is(err, ErrEventNotFound) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "NOT_FOUND",
@@ -25,8 +23,8 @@ func (h *EventHandler) handleServiceError(c *fiber.Ctx, err error) error {
 			},
 		})
 	}
-	if errors.Is(err, service.ErrInvalidDate) ||
-		errors.Is(err, service.ErrMissingRequiredFields) {
+	if errors.Is(err, ErrInvalidDate) ||
+		errors.Is(err, ErrMissingRequiredFields) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
@@ -43,7 +41,7 @@ func (h *EventHandler) handleServiceError(c *fiber.Ctx, err error) error {
 }
 
 func (h *EventHandler) CreateEvent(c *fiber.Ctx) error {
-	var input service.EventInput
+	var input EventInput
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -53,23 +51,23 @@ func (h *EventHandler) CreateEvent(c *fiber.Ctx) error {
 		})
 	}
 
-	event, err := h.service.CreateEvent(c.Context(), input)
+	e, err := h.service.CreateEvent(c.Context(), input)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(event)
+	return c.Status(fiber.StatusCreated).JSON(e)
 }
 
 func (h *EventHandler) GetEventByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	event, err := h.service.GetEventByID(c.Context(), id)
+	e, err := h.service.GetEventByID(c.Context(), id)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(event)
+	return c.Status(fiber.StatusOK).JSON(e)
 }
 
 func (h *EventHandler) ListEvents(c *fiber.Ctx) error {
@@ -78,7 +76,7 @@ func (h *EventHandler) ListEvents(c *fiber.Ctx) error {
 		return h.handleServiceError(c, err)
 	}
 	if events == nil {
-		events = []model.Event{}
+		events = []Event{}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(events)
@@ -87,7 +85,7 @@ func (h *EventHandler) ListEvents(c *fiber.Ctx) error {
 func (h *EventHandler) UpdateEvent(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	var input service.EventInput
+	var input EventInput
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -97,12 +95,12 @@ func (h *EventHandler) UpdateEvent(c *fiber.Ctx) error {
 		})
 	}
 
-	event, err := h.service.UpdateEvent(c.Context(), id, input)
+	e, err := h.service.UpdateEvent(c.Context(), id, input)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(event)
+	return c.Status(fiber.StatusOK).JSON(e)
 }
 
 func (h *EventHandler) DeleteEvent(c *fiber.Ctx) error {
