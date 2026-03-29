@@ -78,3 +78,41 @@ func (h *AttendanceHandler) GetAttendanceByID(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(attendance)
 }
+
+func (h *AttendanceHandler) ListAttendancesByEvent(c *fiber.Ctx) error {
+	eventID := c.Params("event_id")
+	if eventID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "event_id is required",
+			},
+		})
+	}
+
+	attendances, err := h.service.ListAttendancesByEvent(c.Context(), eventID)
+	if err != nil {
+		return h.handleAttendanceError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(attendances)
+}
+
+func (h *AttendanceHandler) ListAttendancesByMember(c *fiber.Ctx) error {
+	memberID := c.Params("member_id")
+	if memberID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "member_id is required",
+			},
+		})
+	}
+
+	attendances, err := h.service.ListAttendancesByMember(c.Context(), memberID)
+	if err != nil {
+		return h.handleAttendanceError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(attendances)
+}
