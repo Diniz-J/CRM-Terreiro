@@ -71,8 +71,6 @@ func (r *AttendanceRepository) GetAttendanceByID(ctx context.Context, id string)
 
 	row := r.db.QueryRowContext(ctx, query, id)
 
-	attendance := &model.Attendance{}
-
 	attendance, err := scanAttendance(row)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan attendance: %w", err)
