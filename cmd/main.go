@@ -44,6 +44,10 @@ func main() {
 	eventService := service.NewEventService(eventRepo)
 	eventHandler := handler.NewEventHandler(eventService)
 
+	attendanceRepo := repository.NewAttendanceRepository(db)
+	attendanceService := service.NewAttendanceService(attendanceRepo)
+	attendanceHandler := handler.NewAttendanceHandler(attendanceService)
+
 	// TODO: Configurar rotas
 	app := fiber.New()
 
@@ -52,6 +56,7 @@ func main() {
 
 	routes.MemberRoutes(app, memberHandler)
 	routes.EventRoutes(app, eventHandler)
+	routes.AttendanceRoutes(app, attendanceHandler)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
