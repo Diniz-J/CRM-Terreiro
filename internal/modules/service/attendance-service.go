@@ -70,3 +70,30 @@ func (s *AttendanceService) MarkAttendance(ctx context.Context, input Attendance
 
 	return attendance, nil
 }
+
+func (s *AttendanceService) GetAttendanceByID(ctx context.Context, id string) (*model.Attendance, error) {
+	attendance, err := s.repo.GetAttendanceByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get attendance: %w", err)
+	}
+	if attendance == nil {
+		return nil, ErrAttendanceNotFound
+	}
+	return attendance, nil
+}
+
+func (s *AttendanceService) ListAttendancesByEvent(ctx context.Context, eventID string) ([]model.Attendance, error) {
+	attendances, err := s.repo.ListAttendancesByEvent(ctx, eventID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list attendances: %w", err)
+	}
+	return attendances, nil
+}
+
+func (s *AttendanceService) ListAttendancesByMember(ctx context.Context, memberID string) ([]model.Attendance, error) {
+	attendances, err := s.repo.ListAttendancesByMember(ctx, memberID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list attendances: %w", err)
+	}
+	return attendances, nil
+}
