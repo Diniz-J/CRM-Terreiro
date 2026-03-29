@@ -38,9 +38,9 @@ func scanAttendance(s scannable) (*model.Attendance, error) {
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("attendance not found")
+			return nil, nil
 		}
-		return nil, nil
+		return nil, err
 	}
 	return &attendance, nil
 }
