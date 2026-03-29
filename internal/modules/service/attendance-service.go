@@ -97,3 +97,55 @@ func (s *AttendanceService) ListAttendancesByMember(ctx context.Context, memberI
 	}
 	return attendances, nil
 }
+
+func (s *AttendanceService) UpdateAttendance(ctx context.Context, id string, input AttendanceInput) (*model.Attendance, error) {
+	existing, err := s.repo.GetAttendanceByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find attendance to update: %w", err)
+	}
+
+	if existing == nil {
+		return nil, ErrAttendanceNotFound
+	}
+	if input.EventID == "" || input.MemberID == "" || input.Status == "" {
+		return nil, ErrMissingRequirement
+	}
+
+	now := time.Now()
+	markedAt := now
+	if input.MarkedAt != nil {
+		markedAt = *input.MarkedAt
+	}
+	attendance := &model.Attendance{
+		ID:        existing.ID,
+		EventID:   input.EventID,
+		MemberID:  input.MemberID,
+		Status:    input.Status,
+		Notes:     input.Notes,
+		MarkedAt:  markedAt,
+		MarkedBy:  input.MarkedBy,
+		CreatedAt: existing.CreatedAt,
+		UpdatedAt: now,
+	}
+
+	if err := s.repo.UpdateAttendance(ctx, attendance); err != nil {
+		return nil, fmt.Errorf("failed to update attendance: %w", err)
+	}
+
+	return attendance, nil
+}
+
+func (s *AttendanceService) DeleteAttendance(ctx context.Context, id string) error {
+	existing, err := s.repo.GetAttendanceByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to find attendance to delete: %w", err)
+	}
+	if existing == nil {
+		return ErrAttendanceNotFound
+	}
+
+	if err := s.repo.DeleteAttendance(ctx, id); err != nil {
+		return fmt.Errorf("failed to delete attendance: %w", err)
+	}
+	return nil
+}
