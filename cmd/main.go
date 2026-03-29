@@ -14,9 +14,13 @@ import (
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/database"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/middleware"
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("Arquivo .env nao encontrado, usando variaveis de ambiente do sistema")
+	}
 
 	//carregar config
 	cfg := config.Load()
