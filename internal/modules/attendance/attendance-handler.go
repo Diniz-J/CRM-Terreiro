@@ -1,22 +1,21 @@
-package handler
+package attendance
 
 import (
 	"errors"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 	"github.com/gofiber/fiber/v2"
 )
 
 type AttendanceHandler struct {
-	service *service.AttendanceService
+	service *AttendanceService
 }
 
-func NewAttendanceHandler(service *service.AttendanceService) *AttendanceHandler {
+func NewAttendanceHandler(service *AttendanceService) *AttendanceHandler {
 	return &AttendanceHandler{service: service}
 }
 
 func (h *AttendanceHandler) handleServiceError(c *fiber.Ctx, err error) error {
-	if errors.Is(err, service.ErrAttendanceNotFound) {
+	if errors.Is(err, ErrAttendanceNotFound) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "NOT_FOUND",
@@ -24,7 +23,7 @@ func (h *AttendanceHandler) handleServiceError(c *fiber.Ctx, err error) error {
 			},
 		})
 	}
-	if errors.Is(err, service.ErrMissingRequirement) {
+	if errors.Is(err, ErrMissingRequirement) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
@@ -38,11 +37,10 @@ func (h *AttendanceHandler) handleServiceError(c *fiber.Ctx, err error) error {
 			"message": "internal server error",
 		},
 	})
-
 }
 
 func (h *AttendanceHandler) MarkAttendance(c *fiber.Ctx) error {
-	var input service.AttendanceInput
+	var input AttendanceInput
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -52,12 +50,12 @@ func (h *AttendanceHandler) MarkAttendance(c *fiber.Ctx) error {
 		})
 	}
 
-	attendance, err := h.service.MarkAttendance(c.Context(), input)
+	a, err := h.service.MarkAttendance(c.Context(), input)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(attendance)
+	return c.Status(fiber.StatusCreated).JSON(a)
 }
 
 func (h *AttendanceHandler) GetAttendanceByID(c *fiber.Ctx) error {
@@ -71,12 +69,12 @@ func (h *AttendanceHandler) GetAttendanceByID(c *fiber.Ctx) error {
 		})
 	}
 
-	attendance, err := h.service.GetAttendanceByID(c.Context(), id)
+	a, err := h.service.GetAttendanceByID(c.Context(), id)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(attendance)
+	return c.Status(fiber.StatusOK).JSON(a)
 }
 
 func (h *AttendanceHandler) ListAttendancesByEvent(c *fiber.Ctx) error {
@@ -128,7 +126,7 @@ func (h *AttendanceHandler) UpdateAttendance(c *fiber.Ctx) error {
 		})
 	}
 
-	var input service.AttendanceInput
+	var input AttendanceInput
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -138,12 +136,12 @@ func (h *AttendanceHandler) UpdateAttendance(c *fiber.Ctx) error {
 		})
 	}
 
-	attendance, err := h.service.UpdateAttendance(c.Context(), id, input)
+	a, err := h.service.UpdateAttendance(c.Context(), id, input)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(attendance)
+	return c.Status(fiber.StatusOK).JSON(a)
 }
 
 func (h *AttendanceHandler) DeleteAttendance(c *fiber.Ctx) error {

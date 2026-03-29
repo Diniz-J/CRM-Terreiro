@@ -1,4 +1,4 @@
-package service
+package member
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/validator"
 	"github.com/google/uuid"
 )
@@ -20,20 +19,20 @@ var (
 	ErrDuplicateEmail = errors.New("email already registered")
 )
 
-type MemberRepository interface {
-	Save(ctx context.Context, member *model.Member) error
-	FindByID(ctx context.Context, id string) (*model.Member, error)
-	Update(ctx context.Context, member *model.Member) error
+type MemberRepositoryInterface interface {
+	Save(ctx context.Context, m *Member) error
+	FindByID(ctx context.Context, id string) (*Member, error)
+	Update(ctx context.Context, m *Member) error
 	Delete(ctx context.Context, id string) error
-	FindAll(ctx context.Context) ([]model.Member, error)
-	SearchByName(ctx context.Context, nome string) ([]*model.Member, error)
+	FindAll(ctx context.Context) ([]Member, error)
+	SearchByName(ctx context.Context, nome string) ([]*Member, error)
 }
 
 type MemberService struct {
-	repo MemberRepository
+	repo MemberRepositoryInterface
 }
 
-func NewMemberService(repo MemberRepository) *MemberService {
+func NewMemberService(repo MemberRepositoryInterface) *MemberService {
 	return &MemberService{repo: repo}
 }
 
@@ -59,7 +58,7 @@ type MemberInput struct {
 	CEP            *string    `json:"cep"`
 }
 
-func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*model.Member, error) {
+func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*Member, error) {
 	if !validator.CPF(input.CPF) {
 		return nil, ErrInvalidCPF
 	}
@@ -73,7 +72,7 @@ func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*m
 	}
 
 	now := time.Now()
-	member := &model.Member{
+	m := &Member{
 		ID:             uuid.New().String(),
 		NomeCompleto:   input.NomeCompleto,
 		NomeReligioso:  input.NomeReligioso,
@@ -87,7 +86,7 @@ func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*m
 		Status:         input.Status,
 		Odun:           input.Odun,
 		Observacoes:    input.Observacoes,
-		Endereco: model.Endereco{
+		Endereco: Endereco{
 			Rua:         input.Rua,
 			Numero:      input.Numero,
 			Complemento: input.Complemento,
@@ -99,28 +98,27 @@ func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*m
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	if err := s.repo.Save(ctx, member); err != nil {
+	if err := s.repo.Save(ctx, m); err != nil {
 		return nil, fmt.Errorf("failed to create member: %w", err)
 	}
 
-	return member, nil
-
+	return m, nil
 }
 
-func (s *MemberService) GetMember(ctx context.Context, id string) (*model.Member, error) {
-	member, err := s.repo.FindByID(ctx, id)
+func (s *MemberService) GetMember(ctx context.Context, id string) (*Member, error) {
+	m, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get member: %w", err)
 	}
 
-	if member == nil {
+	if m == nil {
 		return nil, ErrMemberNotFound
 	}
 
-	return member, nil
+	return m, nil
 }
 
-func (s *MemberService) UpdateMember(ctx context.Context, id string, input MemberInput) (*model.Member, error) {
+func (s *MemberService) UpdateMember(ctx context.Context, id string, input MemberInput) (*Member, error) {
 	existing, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find member to update: %w", err)
@@ -141,7 +139,7 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 		return nil, ErrInvalidPhone
 	}
 
-	member := &model.Member{
+	m := &Member{
 		ID:             id,
 		NomeCompleto:   input.NomeCompleto,
 		NomeReligioso:  input.NomeReligioso,
@@ -155,7 +153,7 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 		Status:         input.Status,
 		Odun:           input.Odun,
 		Observacoes:    input.Observacoes,
-		Endereco: model.Endereco{
+		Endereco: Endereco{
 			Rua:         input.Rua,
 			Numero:      input.Numero,
 			Complemento: input.Complemento,
@@ -165,7 +163,7 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 			CEP:         input.CEP,
 		},
 	}
-	if err := s.repo.Update(ctx, member); err != nil {
+	if err := s.repo.Update(ctx, m); err != nil {
 		return nil, fmt.Errorf("failed to update member: %w", err)
 	}
 
@@ -187,22 +185,22 @@ func (s *MemberService) DeleteMember(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *MemberService) ListMembers(ctx context.Context) ([]model.Member, error) {
-	member, err := s.repo.FindAll(ctx)
+func (s *MemberService) ListMembers(ctx context.Context) ([]Member, error) {
+	members, err := s.repo.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list all members: %w", err)
 	}
-	return member, nil
+	return members, nil
 }
 
-func (s *MemberService) SearchByName(ctx context.Context, nome string) ([]*model.Member, error) {
-	member, err := s.repo.SearchByName(ctx, nome)
+func (s *MemberService) SearchByName(ctx context.Context, nome string) ([]*Member, error) {
+	members, err := s.repo.SearchByName(ctx, nome)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search name: %w", err)
 	}
 
-	if member == nil {
+	if members == nil {
 		return nil, ErrMemberNotFound
 	}
-	return member, nil
+	return members, nil
 }

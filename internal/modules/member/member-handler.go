@@ -1,22 +1,21 @@
-package handler
+package member
 
 import (
 	"errors"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/service"
 	"github.com/gofiber/fiber/v2"
 )
 
 type MemberHandler struct {
-	service *service.MemberService
+	service *MemberService
 }
 
-func NewMemberHandler(service *service.MemberService) *MemberHandler {
+func NewMemberHandler(service *MemberService) *MemberHandler {
 	return &MemberHandler{service: service}
 }
 
 func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
-	if errors.Is(err, service.ErrMemberNotFound) {
+	if errors.Is(err, ErrMemberNotFound) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "NOT_FOUND",
@@ -24,11 +23,11 @@ func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
 			},
 		})
 	}
-	if errors.Is(err, service.ErrInvalidCPF) ||
-		errors.Is(err, service.ErrInvalidEmail) ||
-		errors.Is(err, service.ErrInvalidPhone) ||
-		errors.Is(err, service.ErrDuplicateCPF) ||
-		errors.Is(err, service.ErrDuplicateEmail) {
+	if errors.Is(err, ErrInvalidCPF) ||
+		errors.Is(err, ErrInvalidEmail) ||
+		errors.Is(err, ErrInvalidPhone) ||
+		errors.Is(err, ErrDuplicateCPF) ||
+		errors.Is(err, ErrDuplicateEmail) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
@@ -45,7 +44,7 @@ func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
 }
 
 func (h *MemberHandler) CreateMember(c *fiber.Ctx) error {
-	var input service.MemberInput
+	var input MemberInput
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -55,12 +54,12 @@ func (h *MemberHandler) CreateMember(c *fiber.Ctx) error {
 		})
 	}
 
-	member, err := h.service.CreateMember(c.Context(), input)
+	m, err := h.service.CreateMember(c.Context(), input)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(member)
+	return c.Status(fiber.StatusCreated).JSON(m)
 }
 
 func (h *MemberHandler) UpdateMember(c *fiber.Ctx) error {
@@ -74,7 +73,7 @@ func (h *MemberHandler) UpdateMember(c *fiber.Ctx) error {
 		})
 	}
 
-	var input service.MemberInput
+	var input MemberInput
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -84,12 +83,12 @@ func (h *MemberHandler) UpdateMember(c *fiber.Ctx) error {
 		})
 	}
 
-	member, err := h.service.UpdateMember(c.Context(), id, input)
+	m, err := h.service.UpdateMember(c.Context(), id, input)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(member)
+	return c.Status(fiber.StatusOK).JSON(m)
 }
 
 func (h *MemberHandler) DeleteMember(c *fiber.Ctx) error {
@@ -122,12 +121,12 @@ func (h *MemberHandler) GetMember(c *fiber.Ctx) error {
 		})
 	}
 
-	member, err := h.service.GetMember(c.Context(), id)
+	m, err := h.service.GetMember(c.Context(), id)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(member)
+	return c.Status(fiber.StatusOK).JSON(m)
 }
 
 func (h *MemberHandler) ListMembers(c *fiber.Ctx) error {

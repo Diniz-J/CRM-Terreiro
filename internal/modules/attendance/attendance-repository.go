@@ -1,12 +1,10 @@
-package repository
+package attendance
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
 )
 
 type AttendanceRepository struct {
@@ -17,24 +15,28 @@ func NewAttendanceRepository(db *sql.DB) *AttendanceRepository {
 	return &AttendanceRepository{db: db}
 }
 
+type scannable interface {
+	Scan(dest ...any) error
+}
+
 const attendanceSelectColumns = `
 	id, event_id, member_id, status, notes, marked_at, marked_by, created_at, updated_at, deleted_at
 `
 
-func scanAttendance(s scannable) (*model.Attendance, error) {
-	var attendance model.Attendance
+func scanAttendance(s scannable) (*Attendance, error) {
+	var a Attendance
 
 	err := s.Scan(
-		&attendance.ID,
-		&attendance.EventID,
-		&attendance.MemberID,
-		&attendance.Status,
-		&attendance.Notes,
-		&attendance.MarkedAt,
-		&attendance.MarkedBy,
-		&attendance.CreatedAt,
-		&attendance.UpdatedAt,
-		&attendance.DeletedAt)
+		&a.ID,
+		&a.EventID,
+		&a.MemberID,
+		&a.Status,
+		&a.Notes,
+		&a.MarkedAt,
+		&a.MarkedBy,
+		&a.CreatedAt,
+		&a.UpdatedAt,
+		&a.DeletedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -42,46 +44,46 @@ func scanAttendance(s scannable) (*model.Attendance, error) {
 		}
 		return nil, err
 	}
-	return &attendance, nil
+	return &a, nil
 }
 
-func (r *AttendanceRepository) MarkAttendance(ctx context.Context, attendance *model.Attendance) error {
+func (r *AttendanceRepository) MarkAttendance(ctx context.Context, a *Attendance) error {
 	query := `
 		INSERT INTO attendances (id, event_id, member_id, status, notes, marked_at, marked_by, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`
 
 	_, err := r.db.ExecContext(ctx, query,
-		attendance.ID,
-		attendance.EventID,
-		attendance.MemberID,
-		attendance.Status,
-		attendance.Notes,
-		attendance.MarkedAt,
-		attendance.MarkedBy)
+		a.ID,
+		a.EventID,
+		a.MemberID,
+		a.Status,
+		a.Notes,
+		a.MarkedAt,
+		a.MarkedBy)
 	if err != nil {
 		return fmt.Errorf("failed to mark attendance: %w", err)
 	}
 	return nil
 }
 
-func (r *AttendanceRepository) GetAttendanceByID(ctx context.Context, id string) (*model.Attendance, error) {
+func (r *AttendanceRepository) GetAttendanceByID(ctx context.Context, id string) (*Attendance, error) {
 	query := `
 		SELECT ` + attendanceSelectColumns + ` FROM attendances
 		WHERE id = ? AND deleted_at IS NULL`
 
 	row := r.db.QueryRowContext(ctx, query, id)
 
-	attendance, err := scanAttendance(row)
+	a, err := scanAttendance(row)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan attendance: %w", err)
 	}
 
-	return attendance, nil
+	return a, nil
 }
 
-func (r *AttendanceRepository) ListAttendancesByEvent(ctx context.Context, eventID string) ([]model.Attendance, error) {
+func (r *AttendanceRepository) ListAttendancesByEvent(ctx context.Context, eventID string) ([]Attendance, error) {
 	query := `
-		SELECT ` + attendanceSelectColumns + ` FROM attendances 
+		SELECT ` + attendanceSelectColumns + ` FROM attendances
 		WHERE event_id = ? AND deleted_at IS NULL`
 
 	rows, err := r.db.QueryContext(ctx, query, eventID)
@@ -90,18 +92,18 @@ func (r *AttendanceRepository) ListAttendancesByEvent(ctx context.Context, event
 	}
 	defer rows.Close()
 
-	var attendances []model.Attendance
+	var attendances []Attendance
 
 	for rows.Next() {
-		attendance, err := scanAttendance(rows)
+		a, err := scanAttendance(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan attendances: %w", err)
 		}
-		if attendance == nil {
+		if a == nil {
 			continue
 		}
 
-		attendances = append(attendances, *attendance)
+		attendances = append(attendances, *a)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate attendances: %w", err)
@@ -109,9 +111,9 @@ func (r *AttendanceRepository) ListAttendancesByEvent(ctx context.Context, event
 	return attendances, nil
 }
 
-func (r *AttendanceRepository) ListAttendancesByMember(ctx context.Context, memberID string) ([]model.Attendance, error) {
+func (r *AttendanceRepository) ListAttendancesByMember(ctx context.Context, memberID string) ([]Attendance, error) {
 	query := `
-		SELECT ` + attendanceSelectColumns + ` FROM attendances 
+		SELECT ` + attendanceSelectColumns + ` FROM attendances
 		WHERE member_id = ? AND deleted_at IS NULL`
 
 	rows, err := r.db.QueryContext(ctx, query, memberID)
@@ -120,18 +122,18 @@ func (r *AttendanceRepository) ListAttendancesByMember(ctx context.Context, memb
 	}
 	defer rows.Close()
 
-	var attendances []model.Attendance
+	var attendances []Attendance
 
 	for rows.Next() {
-		attendance, err := scanAttendance(rows)
+		a, err := scanAttendance(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan attendances: %w", err)
 		}
-		if attendance == nil {
+		if a == nil {
 			continue
 		}
 
-		attendances = append(attendances, *attendance)
+		attendances = append(attendances, *a)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate attendances: %w", err)
@@ -139,18 +141,18 @@ func (r *AttendanceRepository) ListAttendancesByMember(ctx context.Context, memb
 	return attendances, nil
 }
 
-func (r *AttendanceRepository) UpdateAttendance(ctx context.Context, attendance *model.Attendance) error {
+func (r *AttendanceRepository) UpdateAttendance(ctx context.Context, a *Attendance) error {
 	query := `
 		UPDATE attendances
 		SET status = ?, notes = ?, marked_at = ?, marked_by = ?, updated_at = NOW()
 		WHERE id = ? AND deleted_at IS NULL`
 
 	result, err := r.db.ExecContext(ctx, query,
-		attendance.Status,
-		attendance.Notes,
-		attendance.MarkedAt,
-		attendance.MarkedBy,
-		attendance.ID)
+		a.Status,
+		a.Notes,
+		a.MarkedAt,
+		a.MarkedBy,
+		a.ID)
 
 	if err != nil {
 		return fmt.Errorf("failed to update attendance: %w", err)

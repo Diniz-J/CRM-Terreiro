@@ -1,4 +1,4 @@
-package service
+package event
 
 import (
 	"context"
@@ -6,29 +6,29 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
 	"github.com/google/uuid"
 )
 
 var (
-	ErrEventNotFound        = errors.New("event not found")
-	ErrInvalidDate          = errors.New("invalid date format, expected YYYY-MM-DD")
+	ErrEventNotFound         = errors.New("event not found")
+	ErrInvalidDate           = errors.New("invalid date format, expected YYYY-MM-DD")
 	ErrMissingRequiredFields = errors.New("name, event_type and event_status are required")
 )
 
-type EventRepository interface {
-	CreateEvent(ctx context.Context, event *model.Event) error
-	GetEventByID(ctx context.Context, id string) (*model.Event, error)
-	ListEvents(ctx context.Context) ([]model.Event, error)
-	UpdateEvent(ctx context.Context, event *model.Event) error
+type EventRepositoryInterface interface {
+	CreateEvent(ctx context.Context, e *Event) error
+	GetEventByID(ctx context.Context, id string) (*Event, error)
+	ListEvents(ctx context.Context) ([]Event, error)
+	UpdateEvent(ctx context.Context, e *Event) error
 	DeleteEvent(ctx context.Context, id string) error
-	GetEventsByDate(ctx context.Context, date time.Time) ([]model.Event, error)
-}
-type EventService struct {
-	repo EventRepository
+	GetEventsByDate(ctx context.Context, date time.Time) ([]Event, error)
 }
 
-func NewEventService(repo EventRepository) *EventService {
+type EventService struct {
+	repo EventRepositoryInterface
+}
+
+func NewEventService(repo EventRepositoryInterface) *EventService {
 	return &EventService{repo: repo}
 }
 
@@ -41,7 +41,7 @@ type EventInput struct {
 	Location    *string `json:"location"`
 }
 
-func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*model.Event, error) {
+func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*Event, error) {
 	if input.Name == "" || input.EventType == "" || input.EventStatus == "" {
 		return nil, ErrMissingRequiredFields
 	}
@@ -52,7 +52,7 @@ func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*mode
 	}
 
 	now := time.Now()
-	event := &model.Event{
+	e := &Event{
 		ID:          uuid.New().String(),
 		Name:        input.Name,
 		Date:        date,
@@ -63,26 +63,26 @@ func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*mode
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	if err := s.repo.CreateEvent(ctx, event); err != nil {
+	if err := s.repo.CreateEvent(ctx, e); err != nil {
 		return nil, fmt.Errorf("failed to create event: %w", err)
 	}
 
-	return event, nil
+	return e, nil
 }
 
-func (s *EventService) GetEventByID(ctx context.Context, id string) (*model.Event, error) {
-	event, err := s.repo.GetEventByID(ctx, id)
+func (s *EventService) GetEventByID(ctx context.Context, id string) (*Event, error) {
+	e, err := s.repo.GetEventByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get event by id: %w", err)
 	}
 
-	if event == nil {
+	if e == nil {
 		return nil, ErrEventNotFound
 	}
-	return event, nil
+	return e, nil
 }
 
-func (s *EventService) ListEvents(ctx context.Context) ([]model.Event, error) {
+func (s *EventService) ListEvents(ctx context.Context) ([]Event, error) {
 	events, err := s.repo.ListEvents(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list events: %w", err)
@@ -90,7 +90,7 @@ func (s *EventService) ListEvents(ctx context.Context) ([]model.Event, error) {
 	return events, nil
 }
 
-func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventInput) (*model.Event, error) {
+func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventInput) (*Event, error) {
 	existing, err := s.repo.GetEventByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find event to update: %w", err)
@@ -109,7 +109,7 @@ func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventIn
 		return nil, ErrMissingRequiredFields
 	}
 
-	event := &model.Event{
+	e := &Event{
 		ID:          existing.ID,
 		Name:        input.Name,
 		Date:        date,
@@ -120,11 +120,11 @@ func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventIn
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := s.repo.UpdateEvent(ctx, event); err != nil {
+	if err := s.repo.UpdateEvent(ctx, e); err != nil {
 		return nil, fmt.Errorf("failed to update event: %w", err)
 	}
 
-	return event, nil
+	return e, nil
 }
 
 func (s *EventService) DeleteEvent(ctx context.Context, id string) error {

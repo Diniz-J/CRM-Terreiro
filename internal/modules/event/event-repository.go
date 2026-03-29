@@ -1,4 +1,4 @@
-package repository
+package event
 
 import (
 	"context"
@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/model"
 )
 
 type EventRepository struct {
@@ -18,25 +16,29 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 	return &EventRepository{db: db}
 }
 
+type scannable interface {
+	Scan(dest ...any) error
+}
+
 const eventSelectColumns = `
 	id, name, date, description, location, event_type, event_status, created_at, updated_at, deleted_at
 `
 
 // Scan
-func scanEvent(s scannable) (*model.Event, error) {
-	var event model.Event
+func scanEvent(s scannable) (*Event, error) {
+	var e Event
 
 	err := s.Scan(
-		&event.ID,
-		&event.Name,
-		&event.Date,
-		&event.Description,
-		&event.Location,
-		&event.EventType,
-		&event.EventStatus,
-		&event.CreatedAt,
-		&event.UpdatedAt,
-		&event.DeletedAt)
+		&e.ID,
+		&e.Name,
+		&e.Date,
+		&e.Description,
+		&e.Location,
+		&e.EventType,
+		&e.EventStatus,
+		&e.CreatedAt,
+		&e.UpdatedAt,
+		&e.DeletedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -45,21 +47,22 @@ func scanEvent(s scannable) (*model.Event, error) {
 		return nil, err
 	}
 
-	return &event, nil
+	return &e, nil
 }
-func (r *EventRepository) CreateEvent(ctx context.Context, event *model.Event) error {
+
+func (r *EventRepository) CreateEvent(ctx context.Context, e *Event) error {
 	query := `
 		INSERT INTO events (id, name, date, description, location, event_type, event_status, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		event.ID,
-		event.Name,
-		event.Date,
-		event.Description,
-		event.Location,
-		event.EventType,
-		event.EventStatus)
+		e.ID,
+		e.Name,
+		e.Date,
+		e.Description,
+		e.Location,
+		e.EventType,
+		e.EventStatus)
 
 	if err != nil {
 		return fmt.Errorf("create event: %w", err)
@@ -67,23 +70,21 @@ func (r *EventRepository) CreateEvent(ctx context.Context, event *model.Event) e
 	return nil
 }
 
-func (r *EventRepository) GetEventByID(ctx context.Context, id string) (*model.Event, error) {
+func (r *EventRepository) GetEventByID(ctx context.Context, id string) (*Event, error) {
 	query := `
 		SELECT ` + eventSelectColumns + ` FROM events
 		WHERE id = ? AND deleted_at IS NULL
 	`
 	row := r.db.QueryRowContext(ctx, query, id)
 
-	event := &model.Event{}
-
-	event, err := scanEvent(row)
+	e, err := scanEvent(row)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan id(%s): %w", id, err)
 	}
-	return event, nil
+	return e, nil
 }
 
-func (r *EventRepository) ListEvents(ctx context.Context) ([]model.Event, error) {
+func (r *EventRepository) ListEvents(ctx context.Context) ([]Event, error) {
 	query := `
 		SELECT ` + eventSelectColumns + ` FROM events
 		WHERE deleted_at IS NULL
@@ -94,18 +95,18 @@ func (r *EventRepository) ListEvents(ctx context.Context) ([]model.Event, error)
 	}
 	defer rows.Close()
 
-	var events []model.Event
+	var events []Event
 
 	for rows.Next() {
-		event, err := scanEvent(rows)
+		e, err := scanEvent(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan event: %w", err)
 		}
-		if event == nil {
+		if e == nil {
 			continue
 		}
 
-		events = append(events, *event)
+		events = append(events, *e)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate events: %w", err)
@@ -113,7 +114,7 @@ func (r *EventRepository) ListEvents(ctx context.Context) ([]model.Event, error)
 	return events, nil
 }
 
-func (r *EventRepository) UpdateEvent(ctx context.Context, event *model.Event) error {
+func (r *EventRepository) UpdateEvent(ctx context.Context, e *Event) error {
 	query := `
 		UPDATE events
 		SET name = ?, date = ?, description = ?, location = ?, event_type = ?, event_status = ?, updated_at = NOW()
@@ -121,13 +122,13 @@ func (r *EventRepository) UpdateEvent(ctx context.Context, event *model.Event) e
 	`
 
 	result, err := r.db.ExecContext(ctx, query,
-		event.Name,
-		event.Date,
-		event.Description,
-		event.Location,
-		event.EventType,
-		event.EventStatus,
-		event.ID)
+		e.Name,
+		e.Date,
+		e.Description,
+		e.Location,
+		e.EventType,
+		e.EventStatus,
+		e.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
 	}
@@ -163,7 +164,7 @@ func (r *EventRepository) DeleteEvent(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *EventRepository) GetEventsByDate(ctx context.Context, date time.Time) ([]model.Event, error) {
+func (r *EventRepository) GetEventsByDate(ctx context.Context, date time.Time) ([]Event, error) {
 	start := date.Truncate(24 * time.Hour)
 	end := date.Add(24 * time.Hour)
 
@@ -177,19 +178,19 @@ func (r *EventRepository) GetEventsByDate(ctx context.Context, date time.Time) (
 	}
 	defer rows.Close()
 
-	var events []model.Event
+	var events []Event
 
 	for rows.Next() {
-		event, err := scanEvent(rows)
+		e, err := scanEvent(rows)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan events: %w", err)
 		}
 
-		if event == nil {
+		if e == nil {
 			continue
 		}
 
-		events = append(events, *event)
+		events = append(events, *e)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -197,5 +198,4 @@ func (r *EventRepository) GetEventsByDate(ctx context.Context, date time.Time) (
 	}
 
 	return events, nil
-
 }
