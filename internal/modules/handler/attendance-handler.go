@@ -15,7 +15,7 @@ func NewAttendanceHandler(service *service.AttendanceService) *AttendanceHandler
 	return &AttendanceHandler{service: service}
 }
 
-func (h *AttendanceHandler) handleAttendanceError(c *fiber.Ctx, err error) error {
+func (h *AttendanceHandler) handleServiceError(c *fiber.Ctx, err error) error {
 	if errors.Is(err, service.ErrAttendanceNotFound) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": fiber.Map{
@@ -54,7 +54,7 @@ func (h *AttendanceHandler) MarkAttendance(c *fiber.Ctx) error {
 
 	attendance, err := h.service.MarkAttendance(c.Context(), input)
 	if err != nil {
-		return h.handleAttendanceError(c, err)
+		return h.handleServiceError(c, err)
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(attendance)
@@ -73,7 +73,7 @@ func (h *AttendanceHandler) GetAttendanceByID(c *fiber.Ctx) error {
 
 	attendance, err := h.service.GetAttendanceByID(c.Context(), id)
 	if err != nil {
-		return h.handleAttendanceError(c, err)
+		return h.handleServiceError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(attendance)
@@ -92,7 +92,7 @@ func (h *AttendanceHandler) ListAttendancesByEvent(c *fiber.Ctx) error {
 
 	attendances, err := h.service.ListAttendancesByEvent(c.Context(), eventID)
 	if err != nil {
-		return h.handleAttendanceError(c, err)
+		return h.handleServiceError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(attendances)
@@ -111,8 +111,56 @@ func (h *AttendanceHandler) ListAttendancesByMember(c *fiber.Ctx) error {
 
 	attendances, err := h.service.ListAttendancesByMember(c.Context(), memberID)
 	if err != nil {
-		return h.handleAttendanceError(c, err)
+		return h.handleServiceError(c, err)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(attendances)
+}
+
+func (h *AttendanceHandler) UpdateAttendance(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "missing id",
+			},
+		})
+	}
+
+	var input service.AttendanceInput
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "invalid body",
+			},
+		})
+	}
+
+	attendance, err := h.service.UpdateAttendance(c.Context(), id, input)
+	if err != nil {
+		return h.handleServiceError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(attendance)
+}
+
+func (h *AttendanceHandler) DeleteAttendance(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": fiber.Map{
+				"code":    "BAD_REQUEST",
+				"message": "missing id",
+			},
+		})
+	}
+
+	err := h.service.DeleteAttendance(c.Context(), id)
+	if err != nil {
+		return h.handleServiceError(c, err)
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }
