@@ -12,6 +12,7 @@ import (
 type AuthRepositoryInterface interface {
 	CreateCredentials(ctx context.Context, c *Credentials) error
 	GetCredentialByCPF(ctx context.Context, cpf string) (*Credentials, error)
+	GetMemberIDByCPF(ctx context.Context, cpf string) (string, error)
 }
 
 type AuthService struct {
@@ -25,6 +26,11 @@ func NewAuthService(repo AuthRepositoryInterface, mrepo member.MemberRepositoryI
 }
 
 func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) error {
+	memberID, err := s.repo.GetMemberIDByCPF(ctx, req.CPF)
+	if err != nil {
+		return fmt.Errorf("register: %w", err)
+	}
+
 	// gera o hash da senha antes de salvar
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -33,7 +39,7 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) error 
 
 	credential := &Credentials{
 		ID:           uuid.NewString(),
-		MemberID:     req.CPF, // vamos ajustar isso logo
+		MemberID:     memberID,
 		PasswordHash: string(hash),
 		IsActive:     true,
 	}
@@ -41,6 +47,17 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) error 
 	return s.repo.CreateCredentials(ctx, credential)
 }
 
-func (s *AuthService) Login(ctx context.Context, cpf string) (*LoginResponse, error) {
-	return s.repo.GetCredentialByCPF(ctx, cpf)
+func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
+	credential, err := s.repo.GetCredentialByCPF(ctx, req.CPF)
+	if err != nil {
+		return nil, fmt.Errorf("login: %w", err)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(credential.PasswordHash), []byte(req.Password))
+	if err != nil {
+		return nil, fmt.Errorf("senha invalida")
+	}
+
+	// TODO: gerar JWT e montar LoginResponse
+	return nil, nil
 }

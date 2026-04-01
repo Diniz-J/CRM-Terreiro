@@ -61,7 +61,7 @@ func (r *AuthRepository) GetMemberIDByCPF(ctx context.Context, cpf string) (stri
 	var id string
 	err := r.db.QueryRowContext(ctx, query, cpf).Scan(&id)
 	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("get memberid by cpf: %w", err)
+		return "", fmt.Errorf("member not found: %w", err)
 	}
 	if err != nil {
 		return "", fmt.Errorf("get memberid by cpf: %w", err)
