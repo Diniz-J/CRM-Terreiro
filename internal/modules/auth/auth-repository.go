@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -13,6 +14,8 @@ type AuthRepository struct {
 func NewAuthRepository(db *sql.DB) *AuthRepository {
 	return &AuthRepository{db: db}
 }
+
+var ErrCredentialNotFound = errors.New("credenciais nao encontradas")
 
 func (r *AuthRepository) CreateCredentials(ctx context.Context, c *Credentials) error {
 	query := `
@@ -45,7 +48,7 @@ func (r *AuthRepository) GetCredentialByCPF(ctx context.Context, cpf string) (*C
 		return nil, fmt.Errorf("credenciais nao encontradas para o CPF informado")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("get credential by cpf: %w", err)
+		return nil, ErrCredentialNotFound
 	}
 	return c, nil
 }
