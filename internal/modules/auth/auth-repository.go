@@ -45,10 +45,26 @@ func (r *AuthRepository) GetCredentialByCPF(ctx context.Context, cpf string) (*C
 	c := &Credentials{}
 	err := r.db.QueryRowContext(ctx, query, cpf).Scan(&c.PasswordHash, &c.MemberID)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("credenciais nao encontradas para o CPF informado")
-	}
-	if err != nil {
 		return nil, ErrCredentialNotFound
 	}
+	if err != nil {
+		return nil, fmt.Errorf("get credentials: %w", err)
+	}
 	return c, nil
+}
+
+func (r *AuthRepository) GetMemberIDByCPF(ctx context.Context, cpf string) (string, error) {
+	query := `
+		SELECT id FROM members WHERE cpf = ?
+		`
+
+	var id string
+	err := r.db.QueryRowContext(ctx, query, cpf).Scan(&id)
+	if err == sql.ErrNoRows {
+		return "", fmt.Errorf("get memberid by cpf: %w", err)
+	}
+	if err != nil {
+		return "", fmt.Errorf("get memberid by cpf: %w", err)
+	}
+	return id, nil
 }
