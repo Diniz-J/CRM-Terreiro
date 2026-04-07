@@ -78,7 +78,7 @@ func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*LoginRespo
 
 	err = bcrypt.CompareHashAndPassword([]byte(credential.PasswordHash), []byte(req.Password))
 	if err != nil {
-		return nil, fmt.Errorf("senha invalida")
+		return nil, ErrSenhaInvalida
 	}
 
 	token, err := gerarToken(credential.MemberID, s.secret)

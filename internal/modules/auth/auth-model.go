@@ -1,6 +1,11 @@
 package auth
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var ErrSenhaInvalida = errors.New("senha invalida")
 
 type Credentials struct {
 	ID           string    `db:"id" json:"id"`
