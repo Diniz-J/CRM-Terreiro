@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/attendance"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/auth"
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/event"
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/member"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/config"
@@ -50,11 +51,20 @@ func main() {
 	attendanceService := attendance.NewAttendanceService(attendanceRepo)
 	attendanceHandler := attendance.NewAttendanceHandler(attendanceService)
 
+	authRepo := auth.NewAuthRepository(db)
+	authService := auth.NewAuthService(authRepo, memberRepo, cfg.Auth.JWTSecret)
+	authHandler := auth.NewAuthHandler(authService)
+
 	app := fiber.New()
 
 	app.Use(middleware.Logger)
 	app.Use(middleware.CorsMiddleware)
 
+	// rotas publicas — nao exigem token
+	auth.Routes(app, authHandler)
+
+	// rotas protegidas — exigem token JWT valido
+	app.Use(middleware.NewAuthMiddleware(cfg.Auth.JWTSecret))
 	member.Routes(app, memberHandler)
 	event.Routes(app, eventHandler)
 	attendance.Routes(app, attendanceHandler)

@@ -1,11 +1,14 @@
 package middleware
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/auth"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,15 +20,34 @@ func Logger(c *fiber.Ctx) error {
 	return err
 }
 
-func AuthMiddleware(c *fiber.Ctx) error {
-	token := c.Get("Authorization")
-	if token == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Missing authorization header"})
+func NewAuthMiddleware(secret string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		header := c.Get("Authorization")
+		if header == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "token ausente"})
+		}
+		if !strings.HasPrefix(header, "Bearer ") {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "formato de token invalido"})
+		}
+
+		tokenStr := strings.TrimPrefix(header, "Bearer ")
+
+		claims := &auth.JwtClaims{}
+		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+			// verifica se o algoritmo e o esperado
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("algoritmo inesperado: %v", t.Header["alg"])
+			}
+			return []byte(secret), nil
+		})
+		if err != nil || !token.Valid {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "token invalido"})
+		}
+
+		// salva o member_id no contexto pra handlers usarem
+		c.Locals("member_id", claims.MemberID)
+		return c.Next()
 	}
-	if !strings.HasPrefix(token, "Bearer ") {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token format"})
-	}
-	return c.Next()
 }
 
 func CorsMiddleware(c *fiber.Ctx) error {
