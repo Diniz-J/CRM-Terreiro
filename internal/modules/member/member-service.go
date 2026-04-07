@@ -49,13 +49,13 @@ type MemberInput struct {
 	Status         string     `json:"status"`
 	Odun           *time.Time `json:"odun"`
 	Observacoes    *string    `json:"observacoes"`
-	Rua            *string    `json:"rua"`
-	Numero         *string    `json:"numero"`
-	Complemento    *string    `json:"complemento"`
-	Bairro         *string    `json:"bairro"`
-	Cidade         *string    `json:"cidade"`
-	Estado         *string    `json:"estado"`
-	CEP            *string    `json:"cep"`
+	Rua            *string    `json:"endereco_rua"`
+	Numero         *string    `json:"endereco_numero"`
+	Complemento    *string    `json:"endereco_complemento"`
+	Bairro         *string    `json:"endereco_bairro"`
+	Cidade         *string    `json:"endereco_cidade"`
+	Estado         *string    `json:"endereco_estado"`
+	CEP            *string    `json:"endereco_cep"`
 }
 
 func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*Member, error) {
