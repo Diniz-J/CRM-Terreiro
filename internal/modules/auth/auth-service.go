@@ -3,8 +3,10 @@ package auth
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/member"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,13 +18,17 @@ type AuthRepositoryInterface interface {
 }
 
 type AuthService struct {
-	repo  AuthRepositoryInterface
-	mrepo member.MemberRepositoryInterface
+	repo   AuthRepositoryInterface
+	mrepo  member.MemberRepositoryInterface
+	secret string
 }
 
-func NewAuthService(repo AuthRepositoryInterface, mrepo member.MemberRepositoryInterface) *AuthService {
-	return &AuthService{repo: repo,
-		mrepo: mrepo}
+func NewAuthService(repo AuthRepositoryInterface, mrepo member.MemberRepositoryInterface, secret string) *AuthService {
+	return &AuthService{
+		repo:   repo,
+		mrepo:  mrepo,
+		secret: secret,
+	}
 }
 
 func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) error {
@@ -47,6 +53,23 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) error 
 	return s.repo.CreateCredentials(ctx, credential)
 }
 
+type jwtClaims struct {
+	MemberID string `json:"member_id"`
+	jwt.RegisteredClaims
+}
+
+func gerarToken(memberID string, secret string) (string, error) {
+	claims := jwtClaims{
+		MemberID: memberID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
+}
+
 func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
 	credential, err := s.repo.GetCredentialByCPF(ctx, req.CPF)
 	if err != nil {
@@ -58,6 +81,12 @@ func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*LoginRespo
 		return nil, fmt.Errorf("senha invalida")
 	}
 
-	// TODO: gerar JWT e montar LoginResponse
-	return nil, nil
+	token, err := gerarToken(credential.MemberID, s.secret)
+	if err != nil {
+		return nil, fmt.Errorf("login: erro ao gerar token: %w", err)
+	}
+
+	return &LoginResponse{
+		Token: token,
+	}, nil
 }

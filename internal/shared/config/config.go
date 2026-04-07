@@ -8,6 +8,11 @@ import (
 type Config struct {
 	Database DatabaseConfig
 	Server   ServerConfig
+	Auth     AuthConfig
+}
+
+type AuthConfig struct {
+	JWTSecret string
 }
 
 type DatabaseConfig struct {
@@ -36,6 +41,9 @@ func Load() *Config {
 		Server: ServerConfig{
 			Port: getEnv("SERVER_PORT", "8080"),
 			Env:  getEnv("SERVER_ENV", "development"),
+		},
+		Auth: AuthConfig{
+			JWTSecret: getEnv("JWT_SECRET", ""),
 		},
 	}
 }
