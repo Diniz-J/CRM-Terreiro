@@ -81,7 +81,15 @@ func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*LoginRespo
 		return nil, fmt.Errorf("login: erro ao gerar token: %w", err)
 	}
 
+	membro, err := s.mrepo.FindByID(ctx, credential.MemberID)
+	if err != nil {
+		return nil, fmt.Errorf("login: erro ao buscar membro: %w", err)
+	}
+
 	return &LoginResponse{
-		Token: token,
+		Token:         token,
+		Nome:          membro.NomeCompleto,
+		NomeReligioso: membro.NomeReligioso,
+		Cargo:         membro.Cargo,
 	}, nil
 }
