@@ -19,6 +19,7 @@ API REST para gestão de terreiro de Candomblé/Umbanda, desenvolvida em Go com 
 
 | Módulo | Descrição |
 |---|---|
+| Auth | Registro e autenticação via JWT |
 | Members | CRUD completo de membros do terreiro |
 | Events | CRUD completo de eventos |
 | Attendance | Registro e gestão de presença em eventos |
@@ -48,6 +49,17 @@ teiunecc-admin/
 
 Copie o `.env.example` para `.env` e preencha as variáveis antes de rodar.
 
+| Variável | Descrição |
+|---|---|
+| DB_HOST | Host do banco de dados |
+| DB_PORT | Porta do banco (padrão: 3306) |
+| DB_USER | Usuário do banco |
+| DB_PASSWORD | Senha do banco |
+| DB_NAME | Nome do banco |
+| SERVER_PORT | Porta da aplicação (padrão: 8080) |
+| SERVER_ENV | Ambiente (development / production) |
+| JWT_SECRET | Chave secreta para assinatura dos tokens JWT |
+
 ## Rodando com Docker
 
 Suba o banco de dados:
@@ -74,7 +86,26 @@ go run cmd/main.go
 
 As migrations são aplicadas automaticamente na inicialização.
 
+## Autenticação
+
+As rotas de `/members`, `/events` e `/attendances` são protegidas e exigem token JWT no header:
+
+```
+Authorization: Bearer <token>
+```
+
+O token é obtido via `POST /auth/login`.
+
 ## Rotas
+
+### Auth
+
+> Rotas públicas — não exigem token.
+
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | /auth/register | Cria credenciais para um membro existente |
+| POST | /auth/login | Autentica e retorna token JWT |
 
 ### Members
 | Método | Rota | Descrição |
