@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/attendance"
+	"github.com/Diniz-J/teiunecc-admin/internal/modules/auth"
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/event"
 	"github.com/Diniz-J/teiunecc-admin/internal/modules/member"
 	"github.com/Diniz-J/teiunecc-admin/internal/shared/config"
@@ -50,6 +51,10 @@ func main() {
 	attendanceService := attendance.NewAttendanceService(attendanceRepo)
 	attendanceHandler := attendance.NewAttendanceHandler(attendanceService)
 
+	authRepo := auth.NewAuthRepository(db)
+	authService := auth.NewAuthService(authRepo, memberRepo, cfg.Auth.JWTSecret)
+	authHandler := auth.NewAuthHandler(authService)
+
 	app := fiber.New()
 
 	app.Use(middleware.Logger)
@@ -58,6 +63,7 @@ func main() {
 	member.Routes(app, memberHandler)
 	event.Routes(app, eventHandler)
 	attendance.Routes(app, attendanceHandler)
+	auth.Routes(app, authHandler)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
