@@ -3,9 +3,16 @@ package auth
 import (
 	"errors"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var ErrSenhaInvalida = errors.New("senha invalida")
+
+type JwtClaims struct {
+	MemberID string `json:"member_id"`
+	jwt.RegisteredClaims
+}
 
 type Credentials struct {
 	ID           string    `db:"id" json:"id"`

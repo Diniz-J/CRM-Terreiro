@@ -53,13 +53,8 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) error 
 	return s.repo.CreateCredentials(ctx, credential)
 }
 
-type jwtClaims struct {
-	MemberID string `json:"member_id"`
-	jwt.RegisteredClaims
-}
-
 func gerarToken(memberID string, secret string) (string, error) {
-	claims := jwtClaims{
+	claims := JwtClaims{
 		MemberID: memberID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),

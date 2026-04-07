@@ -60,10 +60,14 @@ func main() {
 	app.Use(middleware.Logger)
 	app.Use(middleware.CorsMiddleware)
 
+	// rotas publicas — nao exigem token
+	auth.Routes(app, authHandler)
+
+	// rotas protegidas — exigem token JWT valido
+	app.Use(middleware.NewAuthMiddleware(cfg.Auth.JWTSecret))
 	member.Routes(app, memberHandler)
 	event.Routes(app, eventHandler)
 	attendance.Routes(app, attendanceHandler)
-	auth.Routes(app, authHandler)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
