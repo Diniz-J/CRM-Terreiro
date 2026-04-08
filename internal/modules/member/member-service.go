@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/shared/validator"
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/validator"
 	"github.com/google/uuid"
 )
 

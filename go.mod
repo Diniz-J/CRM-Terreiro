@@ -1,4 +1,4 @@
-module github.com/Diniz-J/teiunecc-admin
+module github.com/Diniz-J/CRM-Terreiro
 
 go 1.25.6
 

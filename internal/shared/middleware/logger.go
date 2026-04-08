@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/auth"
+	"github.com/Diniz-J/CRM-Terreiro/internal/modules/auth"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gofiber/fiber/v2"
 )

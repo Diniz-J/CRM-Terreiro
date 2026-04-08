@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/modules/member"
+	"github.com/Diniz-J/CRM-Terreiro/internal/modules/member"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

@@ -1,4 +1,4 @@
-# teiunecc-admin
+# CRM-Terreiro
 
 API REST para gestão de terreiro de Candomblé/Umbanda, desenvolvida em Go com arquitetura em camadas.
 
@@ -27,7 +27,7 @@ API REST para gestão de terreiro de Candomblé/Umbanda, desenvolvida em Go com 
 ## Estrutura do projeto
 
 ```
-teiunecc-admin/
+CRM-Terreiro/
 ├── cmd/
 │   └── main.go
 ├── internal/

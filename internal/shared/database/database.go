@@ -10,7 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
-	"github.com/Diniz-J/teiunecc-admin/internal/shared/config"
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/config"
 )
 
 func Connect(cfg config.DatabaseConfig) (*sql.DB, error) {
