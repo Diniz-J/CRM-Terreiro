@@ -42,7 +42,7 @@ func scanEvent(s scannable) (*Event, error) {
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("event not found")
+			return nil, nil
 		}
 		return nil, err
 	}
