@@ -172,7 +172,7 @@ func (r *AttendanceRepository) DeleteAttendance(ctx context.Context, attendanceI
 	query := `
 		UPDATE attendances
 		SET deleted_at = NOW()
-		WHERE id = ?`
+		WHERE id = ? AND deleted_at IS NULL`
 
 	result, err := r.db.ExecContext(ctx, query, attendanceID)
 	if err != nil {

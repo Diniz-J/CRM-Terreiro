@@ -30,9 +30,9 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	Token         string  `json:"token"`
-	Nome          string  `json:"nome"`
-	NomeReligioso *string `json:"nome_religioso"`
-	Cargo         string  `json:"cargo"`
+	Nome          string  `json:"name"`
+	NomeReligioso *string `json:"religious_name"`
+	Cargo         string  `json:"role"`
 }
 
 type RegisterRequest struct {

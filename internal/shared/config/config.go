@@ -29,6 +29,11 @@ type ServerConfig struct {
 }
 
 func Load() *Config {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET não configurado — a aplicação não pode subir sem um secret definido")
+	}
+
 	return &Config{
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
@@ -43,7 +48,7 @@ func Load() *Config {
 			Env:  getEnv("SERVER_ENV", "development"),
 		},
 		Auth: AuthConfig{
-			JWTSecret: getEnv("JWT_SECRET", ""),
+			JWTSecret: jwtSecret,
 		},
 	}
 }

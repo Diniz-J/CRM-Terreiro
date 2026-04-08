@@ -37,25 +37,25 @@ func NewMemberService(repo MemberRepositoryInterface) *MemberService {
 }
 
 type MemberInput struct {
-	NomeCompleto   string     `json:"nome"`
-	NomeReligioso  *string    `json:"nome_religioso"`
+	NomeCompleto   string     `json:"name"`
+	NomeReligioso  *string    `json:"religious_name"`
 	CPF            string     `json:"cpf"`
 	RG             *string    `json:"rg"`
-	DataNascimento time.Time  `json:"data_nascimento"`
-	Sexo           string     `json:"sexo"`
-	Telefone       string     `json:"telefone"`
+	DataNascimento time.Time  `json:"birth_date"`
+	Sexo           string     `json:"gender"`
+	Telefone       string     `json:"phone"`
 	Email          string     `json:"email"`
-	Cargo          string     `json:"cargo"`
+	Cargo          string     `json:"role"`
 	Status         string     `json:"status"`
 	Odun           *time.Time `json:"odun"`
-	Observacoes    *string    `json:"observacoes"`
-	Rua            *string    `json:"endereco_rua"`
-	Numero         *string    `json:"endereco_numero"`
-	Complemento    *string    `json:"endereco_complemento"`
-	Bairro         *string    `json:"endereco_bairro"`
-	Cidade         *string    `json:"endereco_cidade"`
-	Estado         *string    `json:"endereco_estado"`
-	CEP            *string    `json:"endereco_cep"`
+	Observacoes    *string    `json:"notes"`
+	Rua            *string    `json:"address_street"`
+	Numero         *string    `json:"address_number"`
+	Complemento    *string    `json:"address_complement"`
+	Bairro         *string    `json:"address_neighborhood"`
+	Cidade         *string    `json:"address_city"`
+	Estado         *string    `json:"address_state"`
+	CEP            *string    `json:"address_zip_code"`
 }
 
 func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*Member, error) {
