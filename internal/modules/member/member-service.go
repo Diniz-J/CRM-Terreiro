@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
@@ -18,6 +19,9 @@ var (
 	ErrInvalidPhone   = errors.New("invalid phone")
 	ErrDuplicateCPF   = errors.New("CPF already registered")
 	ErrDuplicateEmail = errors.New("email already registered")
+	ErrInvalidCargo   = errors.New("invalid role")
+	ErrInvalidStatus  = errors.New("invalid status")
+	ErrInvalidGender  = errors.New("invalid gender")
 )
 
 type MemberRepositoryInterface interface {
@@ -60,17 +64,31 @@ type MemberInput struct {
 	CEP            *string    `json:"address_zip_code"`
 }
 
-func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*Member, error) {
+func validateMemberInput(input MemberInput) error {
 	if !validator.CPF(input.CPF) {
-		return nil, ErrInvalidCPF
+		return ErrInvalidCPF
 	}
-
 	if !validator.Email(input.Email) {
-		return nil, ErrInvalidEmail
+		return ErrInvalidEmail
 	}
-
 	if !validator.Phone(input.Telefone) {
-		return nil, ErrInvalidPhone
+		return ErrInvalidPhone
+	}
+	if !slices.Contains([]string{CargoOgan, CargoEkeji, CargoMembro, CargoIniciado, CargoSacerdote, CargoPP, CargoMP}, input.Cargo) {
+		return ErrInvalidCargo
+	}
+	if !slices.Contains([]string{StatusAtivo, StatusInativo, StatusAfastado}, input.Status) {
+		return ErrInvalidStatus
+	}
+	if !slices.Contains([]string{SexoFem, SexoMas, SexoOutro}, input.Sexo) {
+		return ErrInvalidGender
+	}
+	return nil
+}
+
+func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*Member, error) {
+	if err := validateMemberInput(input); err != nil {
+		return nil, err
 	}
 
 	now := time.Now()
@@ -129,16 +147,8 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 		return nil, ErrMemberNotFound
 	}
 
-	if !validator.CPF(input.CPF) {
-		return nil, ErrInvalidCPF
-	}
-
-	if !validator.Email(input.Email) {
-		return nil, ErrInvalidEmail
-	}
-
-	if !validator.Phone(input.Telefone) {
-		return nil, ErrInvalidPhone
+	if err := validateMemberInput(input); err != nil {
+		return nil, err
 	}
 
 	m := &Member{
