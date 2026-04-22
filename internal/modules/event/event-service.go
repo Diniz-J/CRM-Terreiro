@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
@@ -14,6 +15,8 @@ var (
 	ErrEventNotFound         = errors.New("event not found")
 	ErrInvalidDate           = errors.New("invalid date format, expected YYYY-MM-DD")
 	ErrMissingRequiredFields = errors.New("name, event_type and event_status are required")
+	ErrInvalidEventType      = errors.New("invalid event type")
+	ErrInvalidEventStatus    = errors.New("invalid event status")
 )
 
 type EventRepositoryInterface interface {
@@ -43,9 +46,22 @@ type EventInput struct {
 	Location    *string `json:"location"`
 }
 
-func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*Event, error) {
+func validateEventInput(input EventInput) error {
 	if input.Name == "" || input.EventType == "" || input.EventStatus == "" {
-		return nil, ErrMissingRequiredFields
+		return ErrMissingRequiredFields
+	}
+	if !slices.Contains([]string{EventTypeGira, EventTypeFuncao}, input.EventType) {
+		return ErrInvalidEventType
+	}
+	if !slices.Contains([]string{EventStatusScheduled, EventStatusCancelled, EventStatusCompleted}, input.EventStatus) {
+		return ErrInvalidEventStatus
+	}
+	return nil
+}
+
+func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*Event, error) {
+	if err := validateEventInput(input); err != nil {
+		return nil, err
 	}
 
 	date, err := time.Parse("2006-01-02", input.Date)
@@ -108,13 +124,13 @@ func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventIn
 		return nil, ErrEventNotFound
 	}
 
+	if err := validateEventInput(input); err != nil {
+		return nil, err
+	}
+
 	date, err := time.Parse("2006-01-02", input.Date)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidDate, err)
-	}
-
-	if input.Name == "" || input.EventType == "" || input.EventStatus == "" {
-		return nil, ErrMissingRequiredFields
 	}
 
 	e := &Event{

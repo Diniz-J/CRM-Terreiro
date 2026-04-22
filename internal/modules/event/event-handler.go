@@ -25,7 +25,9 @@ func (h *EventHandler) handleServiceError(c *fiber.Ctx, err error) error {
 		})
 	}
 	if errors.Is(err, ErrInvalidDate) ||
-		errors.Is(err, ErrMissingRequiredFields) {
+		errors.Is(err, ErrMissingRequiredFields) ||
+		errors.Is(err, ErrInvalidEventType) ||
+		errors.Is(err, ErrInvalidEventStatus) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
