@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
 	"github.com/Diniz-J/CRM-Terreiro/internal/shared/validator"
 	"github.com/google/uuid"
 )
@@ -24,7 +25,8 @@ type MemberRepositoryInterface interface {
 	FindByID(ctx context.Context, id string) (*Member, error)
 	Update(ctx context.Context, m *Member) error
 	Delete(ctx context.Context, id string) error
-	FindAll(ctx context.Context) ([]Member, error)
+	FindAll(ctx context.Context, limit, offset int) ([]Member, error)
+	Count(ctx context.Context) (int, error)
 	SearchByName(ctx context.Context, nome string) ([]*Member, error)
 }
 
@@ -185,12 +187,18 @@ func (s *MemberService) DeleteMember(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *MemberService) ListMembers(ctx context.Context) ([]Member, error) {
-	members, err := s.repo.FindAll(ctx)
+func (s *MemberService) ListMembers(ctx context.Context, p pagination.Params) (pagination.Result[Member], error) {
+	total, err := s.repo.Count(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list all members: %w", err)
+		return pagination.Result[Member]{}, fmt.Errorf("failed to count members: %w", err)
 	}
-	return members, nil
+
+	members, err := s.repo.FindAll(ctx, p.PageSize, pagination.Offset(p))
+	if err != nil {
+		return pagination.Result[Member]{}, fmt.Errorf("failed to list all members: %w", err)
+	}
+
+	return pagination.NewResult(members, p, total), nil
 }
 
 func (s *MemberService) SearchByName(ctx context.Context, nome string) ([]*Member, error) {

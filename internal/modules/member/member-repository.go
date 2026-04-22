@@ -205,12 +205,23 @@ func (r *MemberRepository) FindByID(ctx context.Context, id string) (*Member, er
 	return m, nil
 }
 
-func (r *MemberRepository) FindAll(ctx context.Context) ([]Member, error) {
+func (r *MemberRepository) Count(ctx context.Context) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM members WHERE deleted_at IS NULL`).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("count members: %w", err)
+	}
+	return total, nil
+}
+
+func (r *MemberRepository) FindAll(ctx context.Context, limit, offset int) ([]Member, error) {
 	query := `
 		SELECT ` + memberSelectColumns + ` FROM members
-		WHERE deleted_at IS NULL`
+		WHERE deleted_at IS NULL
+		ORDER BY nome ASC
+		LIMIT ? OFFSET ?`
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find all members: %w", err)
 	}
