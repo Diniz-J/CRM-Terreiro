@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
 	"github.com/google/uuid"
 )
 
@@ -18,7 +19,8 @@ var (
 type EventRepositoryInterface interface {
 	CreateEvent(ctx context.Context, e *Event) error
 	GetEventByID(ctx context.Context, id string) (*Event, error)
-	ListEvents(ctx context.Context) ([]Event, error)
+	ListEvents(ctx context.Context, limit, offset int) ([]Event, error)
+	CountEvents(ctx context.Context) (int, error)
 	UpdateEvent(ctx context.Context, e *Event) error
 	DeleteEvent(ctx context.Context, id string) error
 	GetEventsByDate(ctx context.Context, date time.Time) ([]Event, error)
@@ -82,12 +84,18 @@ func (s *EventService) GetEventByID(ctx context.Context, id string) (*Event, err
 	return e, nil
 }
 
-func (s *EventService) ListEvents(ctx context.Context) ([]Event, error) {
-	events, err := s.repo.ListEvents(ctx)
+func (s *EventService) ListEvents(ctx context.Context, p pagination.Params) (pagination.Result[Event], error) {
+	total, err := s.repo.CountEvents(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list events: %w", err)
+		return pagination.Result[Event]{}, fmt.Errorf("failed to count events: %w", err)
 	}
-	return events, nil
+
+	events, err := s.repo.ListEvents(ctx, p.PageSize, pagination.Offset(p))
+	if err != nil {
+		return pagination.Result[Event]{}, fmt.Errorf("failed to list events: %w", err)
+	}
+
+	return pagination.NewResult(events, p, total), nil
 }
 
 func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventInput) (*Event, error) {

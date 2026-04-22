@@ -84,12 +84,23 @@ func (r *EventRepository) GetEventByID(ctx context.Context, id string) (*Event, 
 	return e, nil
 }
 
-func (r *EventRepository) ListEvents(ctx context.Context) ([]Event, error) {
+func (r *EventRepository) CountEvents(ctx context.Context) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM events WHERE deleted_at IS NULL`).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("count events: %w", err)
+	}
+	return total, nil
+}
+
+func (r *EventRepository) ListEvents(ctx context.Context, limit, offset int) ([]Event, error) {
 	query := `
 		SELECT ` + eventSelectColumns + ` FROM events
 		WHERE deleted_at IS NULL
+		ORDER BY date DESC
+		LIMIT ? OFFSET ?
 	`
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list events: %w", err)
 	}
