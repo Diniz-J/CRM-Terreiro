@@ -3,6 +3,7 @@ package member
 import (
 	"errors"
 
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -27,7 +28,10 @@ func (h *MemberHandler) handleServiceError(c *fiber.Ctx, err error) error {
 		errors.Is(err, ErrInvalidEmail) ||
 		errors.Is(err, ErrInvalidPhone) ||
 		errors.Is(err, ErrDuplicateCPF) ||
-		errors.Is(err, ErrDuplicateEmail) {
+		errors.Is(err, ErrDuplicateEmail) ||
+		errors.Is(err, ErrInvalidCargo) ||
+		errors.Is(err, ErrInvalidStatus) ||
+		errors.Is(err, ErrInvalidGender) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
@@ -139,10 +143,13 @@ func (h *MemberHandler) ListMembers(c *fiber.Ctx) error {
 		}
 		return c.Status(fiber.StatusOK).JSON(members)
 	}
-	members, err := h.service.ListMembers(c.Context())
+
+	p := pagination.Normalize(c.QueryInt("page"), c.QueryInt("page_size"))
+
+	result, err := h.service.ListMembers(c.Context(), p)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(members)
+	return c.Status(fiber.StatusOK).JSON(result)
 }

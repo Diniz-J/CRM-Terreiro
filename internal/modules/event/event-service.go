@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
 	"github.com/google/uuid"
 )
 
@@ -13,12 +15,15 @@ var (
 	ErrEventNotFound         = errors.New("event not found")
 	ErrInvalidDate           = errors.New("invalid date format, expected YYYY-MM-DD")
 	ErrMissingRequiredFields = errors.New("name, event_type and event_status are required")
+	ErrInvalidEventType      = errors.New("invalid event type")
+	ErrInvalidEventStatus    = errors.New("invalid event status")
 )
 
 type EventRepositoryInterface interface {
 	CreateEvent(ctx context.Context, e *Event) error
 	GetEventByID(ctx context.Context, id string) (*Event, error)
-	ListEvents(ctx context.Context) ([]Event, error)
+	ListEvents(ctx context.Context, limit, offset int) ([]Event, error)
+	CountEvents(ctx context.Context) (int, error)
 	UpdateEvent(ctx context.Context, e *Event) error
 	DeleteEvent(ctx context.Context, id string) error
 	GetEventsByDate(ctx context.Context, date time.Time) ([]Event, error)
@@ -41,9 +46,22 @@ type EventInput struct {
 	Location    *string `json:"location"`
 }
 
-func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*Event, error) {
+func validateEventInput(input EventInput) error {
 	if input.Name == "" || input.EventType == "" || input.EventStatus == "" {
-		return nil, ErrMissingRequiredFields
+		return ErrMissingRequiredFields
+	}
+	if !slices.Contains([]string{EventTypeGira, EventTypeFuncao}, input.EventType) {
+		return ErrInvalidEventType
+	}
+	if !slices.Contains([]string{EventStatusScheduled, EventStatusCancelled, EventStatusCompleted}, input.EventStatus) {
+		return ErrInvalidEventStatus
+	}
+	return nil
+}
+
+func (s *EventService) CreateEvent(ctx context.Context, input EventInput) (*Event, error) {
+	if err := validateEventInput(input); err != nil {
+		return nil, err
 	}
 
 	date, err := time.Parse("2006-01-02", input.Date)
@@ -82,12 +100,18 @@ func (s *EventService) GetEventByID(ctx context.Context, id string) (*Event, err
 	return e, nil
 }
 
-func (s *EventService) ListEvents(ctx context.Context) ([]Event, error) {
-	events, err := s.repo.ListEvents(ctx)
+func (s *EventService) ListEvents(ctx context.Context, p pagination.Params) (pagination.Result[Event], error) {
+	total, err := s.repo.CountEvents(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list events: %w", err)
+		return pagination.Result[Event]{}, fmt.Errorf("failed to count events: %w", err)
 	}
-	return events, nil
+
+	events, err := s.repo.ListEvents(ctx, p.PageSize, pagination.Offset(p))
+	if err != nil {
+		return pagination.Result[Event]{}, fmt.Errorf("failed to list events: %w", err)
+	}
+
+	return pagination.NewResult(events, p, total), nil
 }
 
 func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventInput) (*Event, error) {
@@ -100,13 +124,13 @@ func (s *EventService) UpdateEvent(ctx context.Context, id string, input EventIn
 		return nil, ErrEventNotFound
 	}
 
+	if err := validateEventInput(input); err != nil {
+		return nil, err
+	}
+
 	date, err := time.Parse("2006-01-02", input.Date)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidDate, err)
-	}
-
-	if input.Name == "" || input.EventType == "" || input.EventStatus == "" {
-		return nil, ErrMissingRequiredFields
 	}
 
 	e := &Event{

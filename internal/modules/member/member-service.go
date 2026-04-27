@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
 	"github.com/Diniz-J/CRM-Terreiro/internal/shared/validator"
 	"github.com/google/uuid"
 )
@@ -17,6 +19,9 @@ var (
 	ErrInvalidPhone   = errors.New("invalid phone")
 	ErrDuplicateCPF   = errors.New("CPF already registered")
 	ErrDuplicateEmail = errors.New("email already registered")
+	ErrInvalidCargo   = errors.New("invalid role")
+	ErrInvalidStatus  = errors.New("invalid status")
+	ErrInvalidGender  = errors.New("invalid gender")
 )
 
 type MemberRepositoryInterface interface {
@@ -24,7 +29,8 @@ type MemberRepositoryInterface interface {
 	FindByID(ctx context.Context, id string) (*Member, error)
 	Update(ctx context.Context, m *Member) error
 	Delete(ctx context.Context, id string) error
-	FindAll(ctx context.Context) ([]Member, error)
+	FindAll(ctx context.Context, limit, offset int) ([]Member, error)
+	Count(ctx context.Context) (int, error)
 	SearchByName(ctx context.Context, nome string) ([]*Member, error)
 }
 
@@ -58,17 +64,31 @@ type MemberInput struct {
 	CEP            *string    `json:"address_zip_code"`
 }
 
-func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*Member, error) {
+func validateMemberInput(input MemberInput) error {
 	if !validator.CPF(input.CPF) {
-		return nil, ErrInvalidCPF
+		return ErrInvalidCPF
 	}
-
 	if !validator.Email(input.Email) {
-		return nil, ErrInvalidEmail
+		return ErrInvalidEmail
 	}
-
 	if !validator.Phone(input.Telefone) {
-		return nil, ErrInvalidPhone
+		return ErrInvalidPhone
+	}
+	if !slices.Contains([]string{CargoOgan, CargoEkeji, CargoMembro, CargoIniciado, CargoSacerdote, CargoPP, CargoMP}, input.Cargo) {
+		return ErrInvalidCargo
+	}
+	if !slices.Contains([]string{StatusAtivo, StatusInativo, StatusAfastado}, input.Status) {
+		return ErrInvalidStatus
+	}
+	if !slices.Contains([]string{SexoFem, SexoMas, SexoOutro}, input.Sexo) {
+		return ErrInvalidGender
+	}
+	return nil
+}
+
+func (s *MemberService) CreateMember(ctx context.Context, input MemberInput) (*Member, error) {
+	if err := validateMemberInput(input); err != nil {
+		return nil, err
 	}
 
 	now := time.Now()
@@ -127,16 +147,8 @@ func (s *MemberService) UpdateMember(ctx context.Context, id string, input Membe
 		return nil, ErrMemberNotFound
 	}
 
-	if !validator.CPF(input.CPF) {
-		return nil, ErrInvalidCPF
-	}
-
-	if !validator.Email(input.Email) {
-		return nil, ErrInvalidEmail
-	}
-
-	if !validator.Phone(input.Telefone) {
-		return nil, ErrInvalidPhone
+	if err := validateMemberInput(input); err != nil {
+		return nil, err
 	}
 
 	m := &Member{
@@ -185,12 +197,18 @@ func (s *MemberService) DeleteMember(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *MemberService) ListMembers(ctx context.Context) ([]Member, error) {
-	members, err := s.repo.FindAll(ctx)
+func (s *MemberService) ListMembers(ctx context.Context, p pagination.Params) (pagination.Result[Member], error) {
+	total, err := s.repo.Count(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list all members: %w", err)
+		return pagination.Result[Member]{}, fmt.Errorf("failed to count members: %w", err)
 	}
-	return members, nil
+
+	members, err := s.repo.FindAll(ctx, p.PageSize, pagination.Offset(p))
+	if err != nil {
+		return pagination.Result[Member]{}, fmt.Errorf("failed to list all members: %w", err)
+	}
+
+	return pagination.NewResult(members, p, total), nil
 }
 
 func (s *MemberService) SearchByName(ctx context.Context, nome string) ([]*Member, error) {
