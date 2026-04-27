@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Diniz-J/CRM-Terreiro/internal/modules/member"
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
 )
 
 // mock manual da interface MemberRepositoryInterface
@@ -15,7 +16,8 @@ type mockMemberRepo struct {
 	findByIDFn     func(ctx context.Context, id string) (*member.Member, error)
 	updateFn       func(ctx context.Context, m *member.Member) error
 	deleteFn       func(ctx context.Context, id string) error
-	findAllFn      func(ctx context.Context) ([]member.Member, error)
+	findAllFn      func(ctx context.Context, limit, offset int) ([]member.Member, error)
+	countFn        func(ctx context.Context) (int, error)
 	searchByNameFn func(ctx context.Context, nome string) ([]*member.Member, error)
 }
 
@@ -31,8 +33,11 @@ func (r *mockMemberRepo) Update(ctx context.Context, m *member.Member) error {
 func (r *mockMemberRepo) Delete(ctx context.Context, id string) error {
 	return r.deleteFn(ctx, id)
 }
-func (r *mockMemberRepo) FindAll(ctx context.Context) ([]member.Member, error) {
-	return r.findAllFn(ctx)
+func (r *mockMemberRepo) FindAll(ctx context.Context, limit, offset int) ([]member.Member, error) {
+	return r.findAllFn(ctx, limit, offset)
+}
+func (r *mockMemberRepo) Count(ctx context.Context) (int, error) {
+	return r.countFn(ctx)
 }
 func (r *mockMemberRepo) SearchByName(ctx context.Context, nome string) ([]*member.Member, error) {
 	return r.searchByNameFn(ctx, nome)
@@ -218,31 +223,39 @@ func TestUpdateMember_MembroNaoEncontrado(t *testing.T) {
 
 func TestListMembers_RetornaVazio(t *testing.T) {
 	repo := &mockMemberRepo{
-		findAllFn: func(ctx context.Context) ([]member.Member, error) {
+		countFn: func(ctx context.Context) (int, error) {
+			return 0, nil
+		},
+		findAllFn: func(ctx context.Context, limit, offset int) ([]member.Member, error) {
 			return []member.Member{}, nil
 		},
 	}
 	svc := member.NewMemberService(repo)
 
-	members, err := svc.ListMembers(context.Background())
+	p := pagination.Normalize(1, 20)
+	result, err := svc.ListMembers(context.Background(), p)
 	if err != nil {
 		t.Fatalf("esperado sucesso, obteve erro: %v", err)
 	}
-	if len(members) != 0 {
-		t.Errorf("esperado slice vazio, obteve %d membros", len(members))
+	if len(result.Data) != 0 {
+		t.Errorf("esperado slice vazio, obteve %d membros", len(result.Data))
+	}
+	if result.Pagination.Total != 0 {
+		t.Errorf("esperado total 0, obteve %d", result.Pagination.Total)
 	}
 }
 
 func TestListMembers_ErroNoRepo(t *testing.T) {
 	erroEsperado := errors.New("falha no banco")
 	repo := &mockMemberRepo{
-		findAllFn: func(ctx context.Context) ([]member.Member, error) {
-			return nil, erroEsperado
+		countFn: func(ctx context.Context) (int, error) {
+			return 0, erroEsperado
 		},
 	}
 	svc := member.NewMemberService(repo)
 
-	_, err := svc.ListMembers(context.Background())
+	p := pagination.Normalize(1, 20)
+	_, err := svc.ListMembers(context.Background(), p)
 	if err == nil {
 		t.Fatal("esperado erro, obteve nil")
 	}
