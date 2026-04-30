@@ -3,6 +3,7 @@ package event
 import (
 	"errors"
 
+	"github.com/Diniz-J/CRM-Terreiro/internal/shared/pagination"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,7 +25,9 @@ func (h *EventHandler) handleServiceError(c *fiber.Ctx, err error) error {
 		})
 	}
 	if errors.Is(err, ErrInvalidDate) ||
-		errors.Is(err, ErrMissingRequiredFields) {
+		errors.Is(err, ErrMissingRequiredFields) ||
+		errors.Is(err, ErrInvalidEventType) ||
+		errors.Is(err, ErrInvalidEventStatus) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": fiber.Map{
 				"code":    "BAD_REQUEST",
@@ -71,15 +74,14 @@ func (h *EventHandler) GetEventByID(c *fiber.Ctx) error {
 }
 
 func (h *EventHandler) ListEvents(c *fiber.Ctx) error {
-	events, err := h.service.ListEvents(c.Context())
+	p := pagination.Normalize(c.QueryInt("page"), c.QueryInt("page_size"))
+
+	result, err := h.service.ListEvents(c.Context(), p)
 	if err != nil {
 		return h.handleServiceError(c, err)
 	}
-	if events == nil {
-		events = []Event{}
-	}
 
-	return c.Status(fiber.StatusOK).JSON(events)
+	return c.Status(fiber.StatusOK).JSON(result)
 }
 
 func (h *EventHandler) UpdateEvent(c *fiber.Ctx) error {
